@@ -1,0 +1,4 @@
+Badminton Tournament Manager - Synology Web Station Edition
+Package date: 2026-06-28
+Runtime: PHP 7.0+ (PHP 8.2 recommended)
+Initial login: admin / admin
