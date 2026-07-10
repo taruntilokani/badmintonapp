@@ -1,3 +1,4 @@
+<?php declare(strict_types=1); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1523,13 +1524,14 @@
 </head>
 <body>
 <script>
-  // Synology Web Station persistence + app login:
-  // Domain data is read/written through the token-protected PHP API.
+  // PHP-hosted persistence + app login:
+  // Domain data is read/written through the same-host token-protected PHP API.
   (function bootstrapServerBackedStorage() {
     const params = new URLSearchParams(window.location.search);
-    const localMobileMode = !['http:', 'https:'].includes(window.location.protocol)
-      || params.get('storage') === 'local'
-      || params.get('mode') === 'local'
+    const forcedLocalMode = params.get('storage') === 'local'
+      || params.get('mode') === 'local';
+    const localMobileMode = forcedLocalMode
+      || !['http:', 'https:'].includes(window.location.protocol)
       || window.location.href.startsWith('file:///android_asset/');
 
     if (localMobileMode) {
@@ -1887,7 +1889,7 @@
 
 <div class="section" id="authSection">
   <h3 style="margin-top:0">Login</h3>
-  <div class="hint">Use your tournament account. Initial Synology login: <b>admin</b> / <b>admin</b>. Change it after setup.</div>
+  <div class="hint">Use your tournament account. Initial login: <b>admin</b> / <b>admin</b>. Change it after setup.</div>
 
   <div id="loginPanel">
     <label for="loginUsername">Username</label>
@@ -6724,12 +6726,14 @@ function renderFinalSummary(finalMatch) {
         let loginError = 'Invalid username or password.';
         if (message.includes('Login session limit exceeded')) {
           loginError = sessionLimitMessage;
+        } else if (/405 not allowed|static host/i.test(message)) {
+          loginError = 'The API endpoint did not accept the login request. Confirm the site is hosted on PHP 8.3.19 and api.php is uploaded beside index.php.';
         } else if (/storage|permission|writable|data store/i.test(message)) {
-          loginError = 'The server cannot write to the storage folder. Grant the Web Station http account read/write permission.';
+          loginError = 'The server cannot save application data. Confirm the MySQL database credentials are correct and the tables can be created.';
         } else if (/failed to fetch|networkerror|load failed/i.test(message)) {
-          loginError = 'Cannot reach api.php. Confirm this Web Station portal has a PHP profile enabled.';
+          loginError = 'Cannot reach api.php. Confirm api.php is uploaded beside index.php and PHP 8.3.x is enabled.';
         } else if (/unexpected token|invalid json|invalid api response|no session token|<!doctype|<html|<\?php/i.test(message)) {
-          loginError = `${message} PHP 7.0 is supported; make sure PHP 7.0 is assigned to this Web Station portal.`;
+          loginError = `${message} Confirm this site is running through PHP 8.3.19 and api.php is uploaded beside index.php.`;
         } else if (message && !message.includes('Invalid username or password')) {
           loginError = `Server login error: ${message.slice(0, 240)}`;
         }

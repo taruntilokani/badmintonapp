@@ -2,35 +2,23 @@
 declare(strict_types=1);
 
 /*
- * Badminton Tournament Manager - Synology Web Station API
+ * Badminton Tournament Manager - PHP 8.3.19 MySQL API
  *
- * This intentionally uses guarded PHP data files instead of requiring MariaDB.
- * It is suitable for a small club installation and keeps all browser clients in
- * sync through one NAS-hosted data store.
+ * InfinityFree deployment:
+ * - index.php and api.php live in the same folder.
+ * - db-config.php stores the MySQL credentials.
+ * - database.php creates and opens the MySQL tables.
  */
+
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'database.php';
 
 const SESSION_IDLE_SECONDS = 120;
 const MAX_ACTIVE_SESSIONS = 3;
-const STORE_GUARD = "<?php http_response_code(403); exit; ?>\n";
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    fail('POST requests only.', 405);
-}
-
-$storageDirectory = __DIR__ . DIRECTORY_SEPARATOR . 'storage';
-if (!is_dir($storageDirectory) && !mkdir($storageDirectory, 0770, true) && !is_dir($storageDirectory)) {
-    fail('The storage directory could not be created. Check Web Station permissions.', 500);
-}
-
-function fail(string $message, int $status = 400)
+function fail(string $message, int $status = 400): never
 {
     http_response_code($status);
     header('Content-Type: text/plain; charset=utf-8');
@@ -38,12 +26,33 @@ function fail(string $message, int $status = 400)
     exit;
 }
 
-function respond($value = null, int $status = 200)
+function respond(mixed $value = null, int $status = 200): never
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     echo jsonEncodeValue($value);
     exit;
+}
+
+function db(): PDO
+{
+    try {
+        return btPdo();
+    } catch (Throwable $error) {
+        fail('Database connection failed: ' . $error->getMessage(), 500);
+    }
+}
+
+function initializeDatabase(): void
+{
+    try {
+        $pdo = db();
+        btCreateSchema($pdo);
+        ensureInitialAdmin();
+        cleanupExpiredSessions();
+    } catch (Throwable $error) {
+        fail('Database initialization failed: ' . $error->getMessage(), 500);
+    }
 }
 
 function startsWith(string $value, string $prefix): bool
@@ -76,79 +85,33 @@ function requestPayload(): array
     return $decoded;
 }
 
-function storePath(string $name): string
+function nowIso(): string
 {
-    global $storageDirectory;
-    return $storageDirectory . DIRECTORY_SEPARATOR . $name . '.php';
+    return gmdate(DATE_ATOM);
 }
 
-function decodeStore(string $raw, array $default): array
+function normalizeUsername($username): string
 {
-    if (startsWith($raw, STORE_GUARD)) {
-        $raw = substr($raw, strlen(STORE_GUARD));
-    }
-    if (trim($raw) === '') {
-        return $default;
-    }
-    $decoded = json_decode($raw, true);
-    return is_array($decoded) ? $decoded : $default;
+    return strtolower(trim((string) $username));
 }
 
-function encodeStore(array $value): string
+function normalizeUserRow(array $row): array
 {
-    return STORE_GUARD . jsonEncodeValue($value, JSON_PRETTY_PRINT);
-}
-
-function readStore(string $name, array $default): array
-{
-    $path = storePath($name);
-    $handle = fopen($path, 'c+');
-    if ($handle === false) {
-        fail('Cannot open the Web Station data store. Check folder permissions.', 500);
-    }
-    try {
-        if (!flock($handle, LOCK_SH)) {
-            fail('Cannot lock the data store.', 500);
-        }
-        rewind($handle);
-        $raw = stream_get_contents($handle);
-        return decodeStore($raw === false ? '' : $raw, $default);
-    } finally {
-        flock($handle, LOCK_UN);
-        fclose($handle);
-    }
-}
-
-function mutateStore(string $name, array $default, callable $callback)
-{
-    $path = storePath($name);
-    $handle = fopen($path, 'c+');
-    if ($handle === false) {
-        fail('Cannot open the Web Station data store. Check folder permissions.', 500);
-    }
-    try {
-        if (!flock($handle, LOCK_EX)) {
-            fail('Cannot lock the data store.', 500);
-        }
-        rewind($handle);
-        $raw = stream_get_contents($handle);
-        $value = decodeStore($raw === false ? '' : $raw, $default);
-        $result = $callback($value);
-        $encoded = encodeStore($value);
-        rewind($handle);
-        if (!ftruncate($handle, 0) || fwrite($handle, $encoded) === false || !fflush($handle)) {
-            fail('Cannot save the Web Station data store. Check folder permissions.', 500);
-        }
-        return $result;
-    } finally {
-        flock($handle, LOCK_UN);
-        fclose($handle);
-    }
+    return [
+        'username' => (string) $row['username'],
+        'display_name' => (string) $row['display_name'],
+        'password_hash' => (string) $row['password_hash'],
+        'is_admin' => (bool) $row['is_admin'],
+        'must_reset_password' => (bool) $row['must_reset_password'],
+        'is_active' => (bool) $row['is_active'],
+        'created_at' => (string) $row['created_at'],
+        'updated_at' => (string) $row['updated_at'],
+    ];
 }
 
 function initialUsers(): array
 {
-    $now = gmdate(DATE_ATOM);
+    $now = nowIso();
     return [
         'admin' => [
             'username' => 'admin',
@@ -163,23 +126,165 @@ function initialUsers(): array
     ];
 }
 
+function ensureInitialAdmin(): void
+{
+    $count = (int) db()->query('SELECT COUNT(*) FROM bt_users')->fetchColumn();
+    if ($count > 0) {
+        return;
+    }
+    replaceStoreInDatabase('users', initialUsers());
+}
+
+function cleanupExpiredSessions(): void
+{
+    $statement = db()->prepare('DELETE FROM bt_sessions WHERE expires_at <= ?');
+    $statement->execute([time()]);
+}
+
+function readStore(string $name, array $default): array
+{
+    try {
+        return readStoreFromDatabase($name, $default);
+    } catch (Throwable $error) {
+        fail('Cannot read MySQL application data: ' . $error->getMessage(), 500);
+    }
+}
+
+function mutateStore(string $name, array $default, callable $callback)
+{
+    $pdo = db();
+    try {
+        $pdo->beginTransaction();
+        $value = readStoreFromDatabase($name, $default);
+        $result = $callback($value);
+        replaceStoreInDatabase($name, $value);
+        $pdo->commit();
+        return $result;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        fail('Cannot save MySQL application data: ' . $error->getMessage(), 500);
+    }
+}
+
+function readStoreFromDatabase(string $name, array $default): array
+{
+    $pdo = db();
+    if ($name === 'users') {
+        $users = [];
+        $statement = $pdo->query('SELECT username, display_name, password_hash, is_admin, must_reset_password, is_active, created_at, updated_at FROM bt_users ORDER BY username');
+        foreach ($statement->fetchAll() as $row) {
+            $user = normalizeUserRow($row);
+            $users[$user['username']] = $user;
+        }
+        return $users ?: $default;
+    }
+
+    if ($name === 'sessions') {
+        $sessions = [];
+        $statement = $pdo->query('SELECT token, username, expires_at FROM bt_sessions');
+        foreach ($statement->fetchAll() as $row) {
+            $token = (string) $row['token'];
+            $sessions[$token] = [
+                'username' => (string) $row['username'],
+                'expires_at' => (int) $row['expires_at'],
+            ];
+        }
+        return $sessions ?: $default;
+    }
+
+    if ($name === 'app-state') {
+        $state = [];
+        $statement = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
+        foreach ($statement->fetchAll() as $row) {
+            $state[(string) $row['storage_key']] = (string) $row['storage_value'];
+        }
+        return $state ?: $default;
+    }
+
+    return $default;
+}
+
+function replaceStoreInDatabase(string $name, array $value): void
+{
+    $pdo = db();
+    $now = nowIso();
+
+    if ($name === 'users') {
+        $pdo->exec('DELETE FROM bt_users');
+        $statement = $pdo->prepare('
+            INSERT INTO bt_users
+                (username, display_name, password_hash, is_admin, must_reset_password, is_active, created_at, updated_at)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?)
+        ');
+        foreach ($value as $user) {
+            if (!is_array($user) || trim((string) ($user['username'] ?? '')) === '') {
+                continue;
+            }
+            $statement->execute([
+                normalizeUsername($user['username']),
+                trim((string) ($user['display_name'] ?? $user['username'])),
+                (string) ($user['password_hash'] ?? ''),
+                !empty($user['is_admin']) ? 1 : 0,
+                !empty($user['must_reset_password']) ? 1 : 0,
+                !empty($user['is_active']) ? 1 : 0,
+                (string) ($user['created_at'] ?? $now),
+                (string) ($user['updated_at'] ?? $now),
+            ]);
+        }
+        return;
+    }
+
+    if ($name === 'sessions') {
+        $pdo->exec('DELETE FROM bt_sessions');
+        $statement = $pdo->prepare('
+            INSERT INTO bt_sessions (token, username, expires_at, created_at)
+            VALUES (?, ?, ?, ?)
+        ');
+        foreach ($value as $token => $session) {
+            if (!is_array($session) || trim((string) $token) === '' || trim((string) ($session['username'] ?? '')) === '') {
+                continue;
+            }
+            $expiresAt = (int) ($session['expires_at'] ?? 0);
+            if ($expiresAt <= time()) {
+                continue;
+            }
+            $statement->execute([
+                (string) $token,
+                normalizeUsername($session['username']),
+                $expiresAt,
+                (string) ($session['created_at'] ?? $now),
+            ]);
+        }
+        return;
+    }
+
+    if ($name === 'app-state') {
+        $pdo->exec('DELETE FROM bt_app_state');
+        $statement = $pdo->prepare('
+            INSERT INTO bt_app_state (storage_key, storage_value, updated_at)
+            VALUES (?, ?, ?)
+        ');
+        foreach ($value as $key => $storageValue) {
+            $key = trim((string) $key);
+            if ($key === '') {
+                continue;
+            }
+            $statement->execute([$key, (string) $storageValue, $now]);
+        }
+    }
+}
+
 function loadUsers(): array
 {
     $users = readStore('users', []);
     if ($users !== []) {
         return $users;
     }
-    mutateStore('users', [], function (array &$current) {
-        if ($current === []) {
-            $current = initialUsers();
-        }
-    });
+    ensureInitialAdmin();
     return readStore('users', []);
-}
-
-function normalizeUsername($username): string
-{
-    return strtolower(trim((string) $username));
 }
 
 function sessionResponse(array $user, string $token, int $expiresAt): array
@@ -226,14 +331,14 @@ function requireUser($rawToken, bool $adminOnly = false): array
     return [$user, $token, $session];
 }
 
-function validateNewPassword(string $password)
+function validateNewPassword(string $password): void
 {
     if (strlen($password) < 8) {
         fail('Password must contain at least 8 characters.', 400);
     }
 }
 
-function deleteSessionsForUser(string $username)
+function deleteSessionsForUser(string $username): void
 {
     mutateStore('sessions', [], function (array &$sessions) use ($username) {
         foreach ($sessions as $token => $session) {
@@ -243,6 +348,21 @@ function deleteSessionsForUser(string $username)
         }
     });
 }
+
+if (version_compare(PHP_VERSION, MINIMUM_PHP_VERSION, '<')) {
+    fail('PHP ' . MINIMUM_PHP_VERSION . '+ is required. Configure the hosting account for PHP ' . TARGET_PHP_VERSION . '.', 500);
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    fail('POST requests only.', 405);
+}
+
+initializeDatabase();
 
 $payload = requestPayload();
 $action = trim((string) ($_GET['action'] ?? ''));
@@ -271,7 +391,7 @@ switch ($action) {
             if ($active >= MAX_ACTIVE_SESSIONS) {
                 fail('Login session limit exceeded.', 409);
             }
-            $sessions[$token] = ['username' => $username, 'expires_at' => $expiresAt];
+            $sessions[$token] = ['username' => $username, 'expires_at' => $expiresAt, 'created_at' => nowIso()];
         });
         respond(sessionResponse($user, $token, $expiresAt));
 
@@ -383,7 +503,7 @@ switch ($action) {
             if (isset($users[$username])) {
                 fail('Username already exists.', 409);
             }
-            $now = gmdate(DATE_ATOM);
+            $now = nowIso();
             $users[$username] = [
                 'username' => $username,
                 'display_name' => $displayName,
@@ -409,7 +529,7 @@ switch ($action) {
         mutateStore('users', [], function (array &$users) use ($username, $new) {
             $users[$username]['password_hash'] = password_hash($new, PASSWORD_DEFAULT);
             $users[$username]['must_reset_password'] = false;
-            $users[$username]['updated_at'] = gmdate(DATE_ATOM);
+            $users[$username]['updated_at'] = nowIso();
         });
         mutateStore('sessions', [], function (array &$sessions) use ($username, $token) {
             foreach ($sessions as $key => $session) {
@@ -431,7 +551,7 @@ switch ($action) {
             }
             $users[$username]['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
             $users[$username]['must_reset_password'] = true;
-            $users[$username]['updated_at'] = gmdate(DATE_ATOM);
+            $users[$username]['updated_at'] = nowIso();
         });
         deleteSessionsForUser($username);
         respond(['ok' => true]);
@@ -456,7 +576,7 @@ switch ($action) {
                 }
             }
             $users[$username]['is_active'] = $isActive;
-            $users[$username]['updated_at'] = gmdate(DATE_ATOM);
+            $users[$username]['updated_at'] = nowIso();
         });
         if (!$isActive) {
             deleteSessionsForUser($username);
