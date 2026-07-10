@@ -1,3 +1,9 @@
+<?php
+declare(strict_types=1);
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +56,41 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    h2 {
+    .skipLink {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 200;
+      transform: translateY(-140%);
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--primary-strong);
+      color: #ffffff;
+      font-weight: 750;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+      transition: transform 0.15s ease;
+    }
+
+    .skipLink:focus {
+      transform: translateY(0);
+      outline: none;
+      box-shadow: var(--focus-ring), 0 10px 24px rgba(15, 23, 42, 0.18);
+    }
+
+    .srOnly {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    h1 {
       width: min(100%, 1040px);
       margin: 0 auto 4px;
       padding: 0 2px;
@@ -497,6 +537,22 @@
     button:active:not(:disabled) {
       transform: translateY(0);
       box-shadow: none;
+    }
+
+    button:focus-visible,
+    input[type=text]:focus-visible,
+    input[type=password]:focus-visible,
+    input[type=number]:focus-visible,
+    input[type=date]:focus-visible,
+    input[type=time]:focus-visible,
+    input[type=file]:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .bottomNav button:focus-visible,
+    .pointsTeamButton:focus-visible,
+    .historyCalendarDay:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
     }
 
     button:disabled {
@@ -1213,7 +1269,7 @@
       }
     }
 
-    body.authLocked > h2,
+    body.authLocked > h1,
     body.authLocked > .subTitle,
     body.authLocked > .bottomNav,
     body.authLocked > .section:not(#authSection) {
@@ -1238,6 +1294,17 @@
     @media (min-width: 720px) {
       .knockoutMatches {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
       }
     }
 
@@ -1302,7 +1369,7 @@
         padding: 8px 6px 20px;
       }
 
-      h2 {
+      h1 {
         font-size: 22px;
       }
 
@@ -1523,13 +1590,14 @@
 </head>
 <body>
 <script>
-  // Synology Web Station persistence + app login:
-  // Domain data is read/written through the token-protected PHP API.
+  // PHP-hosted persistence + app login:
+  // Domain data is read/written through the same-host token-protected PHP API.
   (function bootstrapServerBackedStorage() {
     const params = new URLSearchParams(window.location.search);
-    const localMobileMode = !['http:', 'https:'].includes(window.location.protocol)
-      || params.get('storage') === 'local'
-      || params.get('mode') === 'local'
+    const forcedLocalMode = params.get('storage') === 'local'
+      || params.get('mode') === 'local';
+    const localMobileMode = forcedLocalMode
+      || !['http:', 'https:'].includes(window.location.protocol)
       || window.location.href.startsWith('file:///android_asset/');
 
     if (localMobileMode) {
@@ -1550,6 +1618,9 @@
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         }),
+        patchMatchScore: () => {},
+        syncTournamentScores: () => {},
+        syncScoreRows: () => {},
         authToken: () => localSession.token,
         startSessionActivityWatch: () => {},
         login: async () => localSession,
@@ -1565,7 +1636,26 @@
     const APP_KEY_PREFIX = 'bt_';
     const TOURNAMENT_PREFIX = 'bt_tournament_v1_';
     const PLAYER_LIST_PREFIX = 'bt_playerlist_v1_';
-    const rpcUrl = (path) => `api.php?action=${encodeURIComponent(path)}`;
+    const apiBaseUrl = (() => {
+      const current = new URL(window.location.href);
+      const path = current.pathname || '/';
+      let directory;
+      if (path.endsWith('/')) {
+        directory = path;
+      } else {
+        const lastSegment = path.slice(path.lastIndexOf('/') + 1);
+        directory = lastSegment.includes('.')
+          ? path.slice(0, path.lastIndexOf('/') + 1)
+          : `${path}/`;
+      }
+      return `${current.origin}${directory}api.php`;
+    })();
+    window.btApiUrl = apiBaseUrl;
+    const rpcUrl = (path) => {
+      const url = new URL(apiBaseUrl);
+      url.searchParams.set('action', path);
+      return url.toString();
+    };
     const nativeSetItem = Storage.prototype.setItem;
     const nativeRemoveItem = Storage.prototype.removeItem;
     const sessionKey = 'bt_auth_session_v1';
@@ -1576,6 +1666,8 @@
     let lastActivityAt = Date.now();
     let lastRefreshAt = 0;
     let idleTimer = null;
+    const writeQueues = new Map();
+    const activeWrites = new Set();
     let activityWatchStarted = false;
     let sessionRefreshInFlight = false;
     let expiringSession = false;
@@ -1616,6 +1708,7 @@
       if (expiringSession) return;
       expiringSession = true;
       const token = authToken();
+      flushPendingDatabaseWrites();
       clearSession();
       setSessionNotice(message);
       if (notifyServer && token) {
@@ -1649,17 +1742,37 @@
 
     function sendJson(url, options) {
       const headers = { 'Content-Type': 'application/json', ...(options?.headers || {}) };
-      return fetch(url, { keepalive: true, ...options, headers }).then(handleExpiredResponse).catch((error) => {
+      return fetch(url, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        ...options,
+        headers,
+      }).then(handleExpiredResponse).catch((error) => {
         console.warn('Database sync failed:', error);
       });
     }
 
+    function sendTrackedJson(url, options) {
+      const write = sendJson(url, options);
+      activeWrites.add(write);
+      write.finally(() => activeWrites.delete(write));
+      return write;
+    }
+
     async function postRpc(path, payload) {
-      const res = await fetch(rpcUrl(path), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload || {}),
-      });
+      const url = rpcUrl(path);
+      let res;
+      try {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload || {}),
+          cache: 'no-store',
+          credentials: 'same-origin',
+        });
+      } catch (error) {
+        throw new Error(`Network error while calling ${url}: ${error?.message || error}`);
+      }
       await handleExpiredResponse(res);
       return res;
     }
@@ -1730,6 +1843,56 @@
       lastRefreshAt = 0;
     }
 
+    function queueDatabaseWrite(queueKey, writeOperation) {
+      const queue = writeQueues.get(queueKey) || {
+        running: false,
+        dirty: false,
+        operation: null,
+      };
+      queue.operation = writeOperation;
+      queue.dirty = true;
+      writeQueues.set(queueKey, queue);
+      if (!queue.running) runDatabaseWriteQueue(queueKey);
+      return true;
+    }
+
+    async function runDatabaseWriteQueue(queueKey) {
+      const queue = writeQueues.get(queueKey);
+      if (!queue || queue.running) return;
+
+      queue.running = true;
+      try {
+        while (queue.dirty && queue.operation) {
+          queue.dirty = false;
+          await queue.operation();
+        }
+      } catch (error) {
+        console.warn('Database sync failed:', error);
+      } finally {
+        queue.running = false;
+        if (queue.dirty) {
+          runDatabaseWriteQueue(queueKey);
+        } else {
+          writeQueues.delete(queueKey);
+        }
+      }
+    }
+
+    async function waitForQueuedDatabaseWrites() {
+      const timeout = new Promise(resolve => window.setTimeout(resolve, 10000));
+      const drain = (async () => {
+        for (let attempt = 0; attempt < 30; attempt++) {
+          writeQueues.forEach((queue, key) => {
+            if (!queue.running) runDatabaseWriteQueue(key);
+          });
+          if (writeQueues.size === 0 && activeWrites.size === 0) return;
+          await Promise.allSettled([...activeWrites]);
+          await new Promise(resolve => window.setTimeout(resolve, 25));
+        }
+      })();
+      await Promise.race([drain, timeout]);
+    }
+
     function hydrateFromDatabase(token) {
       if (!token) return false;
       try {
@@ -1754,15 +1917,65 @@
       return false;
     }
 
+    function normalizeScoreForSync(value) {
+      if (value === null || value === undefined || value === '') return null;
+      const score = Number(value);
+      if (!Number.isFinite(score)) return null;
+      return Math.trunc(score);
+    }
+
+    function collectTournamentScorePayload(payload) {
+      if (!payload || typeof payload !== 'object' || !payload.id) {
+        return { tournament_id: '', scores: [] };
+      }
+
+      const rowsById = new Map();
+      const addMatch = (match) => {
+        if (!match || typeof match !== 'object') return;
+        const matchId = String(match.id || '').trim();
+        if (!matchId) return;
+        const score1 = normalizeScoreForSync(match.score1);
+        const score2 = normalizeScoreForSync(match.score2);
+        if (score1 === null && score2 === null) return;
+        const existing = rowsById.get(matchId) || { match_id: matchId, score1: null, score2: null };
+        if (score1 !== null) existing.score1 = score1;
+        if (score2 !== null) existing.score2 = score2;
+        rowsById.set(matchId, existing);
+      };
+
+      if (Array.isArray(payload.matches)) {
+        payload.matches.forEach(addMatch);
+      }
+      addMatch(payload.finalMatch);
+      const knockout = payload.knockout;
+      if (knockout && typeof knockout === 'object') {
+        ['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'].forEach((key) => {
+          addMatch(knockout[key]);
+        });
+      }
+
+      return { tournament_id: String(payload.id), scores: [...rowsById.values()] };
+    }
+
     function saveDomainKey(key, value) {
       const token = authToken();
       if (!token) return false;
 
       if (isTournamentKey(key)) {
         try {
-          sendJson(rpcUrl('save_tournament'), {
-            method: 'POST',
-            body: JSON.stringify({ auth_token: token, payload: JSON.parse(value) }),
+          const payload = JSON.parse(value);
+          const scorePayload = collectTournamentScorePayload(payload);
+          queueDatabaseWrite(`domain:${key}`, () => {
+            return sendTrackedJson(rpcUrl('save_tournament'), {
+              method: 'POST',
+              body: JSON.stringify({ auth_token: token, payload }),
+            }).then((res) => {
+              if (!scorePayload.scores.length) return res;
+              return sendTrackedJson(rpcUrl('save_match_scores'), {
+                method: 'POST',
+                body: JSON.stringify({ auth_token: token, ...scorePayload }),
+              });
+            });
           });
         } catch (error) {
           console.warn('Could not save tournament to normalized API:', error);
@@ -1772,9 +1985,12 @@
 
       if (isPlayerListKey(key)) {
         try {
-          sendJson(rpcUrl('save_player_list'), {
-            method: 'POST',
-            body: JSON.stringify({ auth_token: token, storage_key: key, payload: JSON.parse(value) }),
+          const payload = JSON.parse(value);
+          queueDatabaseWrite(`domain:${key}`, () => {
+            return sendTrackedJson(rpcUrl('save_player_list'), {
+              method: 'POST',
+              body: JSON.stringify({ auth_token: token, storage_key: key, payload }),
+            });
           });
         } catch (error) {
           console.warn('Could not save player list to normalized API:', error);
@@ -1785,23 +2001,63 @@
       return false;
     }
 
+    function patchMatchScore(tournamentId, matchId, scoreSide, scoreValue) {
+      const token = authToken();
+      if (!token || !tournamentId || !matchId || (scoreSide !== 1 && scoreSide !== 2)) return false;
+      const patchKey = `${tournamentId}:${matchId}:${scoreSide}`;
+      return queueDatabaseWrite(`score:${patchKey}`, () => sendTrackedJson(rpcUrl('patch_match_score'), {
+        method: 'POST',
+        body: JSON.stringify({
+          auth_token: token,
+          tournament_id: tournamentId,
+          match_id: String(matchId),
+          score_side: scoreSide,
+          score_value: scoreValue === '' || scoreValue === undefined ? null : scoreValue,
+        }),
+      }));
+    }
+
+    function syncTournamentScores(payload) {
+      const token = authToken();
+      const scorePayload = collectTournamentScorePayload(payload);
+      if (!token || !scorePayload.tournament_id || !scorePayload.scores.length) return false;
+      return queueDatabaseWrite(`scores:${scorePayload.tournament_id}`, () => sendTrackedJson(rpcUrl('save_match_scores'), {
+        method: 'POST',
+        body: JSON.stringify({ auth_token: token, ...scorePayload }),
+      }));
+    }
+
+    function syncScoreRows(tournamentId, scores) {
+      const token = authToken();
+      const cleaned = Array.isArray(scores) ? scores.filter(row => row?.match_id && (row.score1 !== null || row.score2 !== null)) : [];
+      if (!token || !tournamentId || !cleaned.length) return false;
+      return queueDatabaseWrite(`visible-scores:${tournamentId}`, () => sendTrackedJson(rpcUrl('save_match_scores'), {
+        method: 'POST',
+        body: JSON.stringify({ auth_token: token, tournament_id: String(tournamentId), scores: cleaned }),
+      }));
+    }
+
+    function flushPendingDatabaseWrites() {
+      return waitForQueuedDatabaseWrites();
+    }
+
     function deleteDomainKey(key) {
       const token = authToken();
       if (!token) return false;
 
       if (isTournamentKey(key)) {
-        sendJson(rpcUrl('delete_tournament'), {
+        queueDatabaseWrite(`domain:${key}`, () => sendTrackedJson(rpcUrl('delete_tournament'), {
           method: 'POST',
           body: JSON.stringify({ auth_token: token, tournament_id: key.replace(TOURNAMENT_PREFIX, '') }),
-        });
+        }));
         return true;
       }
 
       if (isPlayerListKey(key)) {
-        sendJson(rpcUrl('delete_player_list'), {
+        queueDatabaseWrite(`domain:${key}`, () => sendTrackedJson(rpcUrl('delete_player_list'), {
           method: 'POST',
           body: JSON.stringify({ auth_token: token, player_list_id: key.replace(PLAYER_LIST_PREFIX, '') }),
-        });
+        }));
         return true;
       }
 
@@ -1815,8 +2071,12 @@
       consumeSessionNotice,
       hydrateFromDatabase,
       postRpc,
+      patchMatchScore,
+      syncTournamentScores,
+      syncScoreRows,
       authToken,
       startSessionActivityWatch,
+      flushPendingDatabaseWrites,
       async login(username, password) {
         const res = await postRpc('login_user', { username, password });
         const responseText = await res.text();
@@ -1838,11 +2098,19 @@
       },
       async logout() {
         const token = authToken();
+        await flushPendingDatabaseWrites();
         if (token) await postRpc('logout_user', { auth_token: token });
         clearSession();
         location.reload();
       },
     };
+
+    window.addEventListener('pagehide', () => {
+      flushPendingDatabaseWrites();
+    });
+    window.addEventListener('beforeunload', () => {
+      flushPendingDatabaseWrites();
+    });
 
     const session = getSession();
     if (session?.token && !session.mustResetPassword && hydrateFromDatabase(session.token)) {
@@ -1855,10 +2123,10 @@
       if (saveDomainKey(key, String(value))) return;
       const token = authToken();
       if (!token) return;
-      sendJson(rpcUrl('save_app_setting'), {
+      queueDatabaseWrite(`setting:${key}`, () => sendTrackedJson(rpcUrl('save_app_setting'), {
         method: 'POST',
         body: JSON.stringify({ auth_token: token, storage_key: key, storage_value: String(value) }),
-      });
+      }));
     };
 
     Storage.prototype.removeItem = function patchedRemoveItem(key) {
@@ -1867,15 +2135,18 @@
       if (deleteDomainKey(key)) return;
       const token = authToken();
       if (!token) return;
-      sendJson(rpcUrl('delete_app_setting'), {
+      queueDatabaseWrite(`setting:${key}`, () => sendTrackedJson(rpcUrl('delete_app_setting'), {
         method: 'POST',
         body: JSON.stringify({ auth_token: token, storage_key: key }),
-      });
+      }));
     };
   })();
 </script>
 
-<h2>Badminton Tournament Manager</h2>
+<a class="skipLink" href="#authSection">Skip to login</a>
+<a class="skipLink" href="#bottomNav">Skip to app navigation</a>
+
+<h1 id="pageTitle">Badminton Tournament Manager</h1>
 <div class="subTitle">Run tournaments, scoring, standings, finals, and history from one organized workspace.</div>
 <div class="section hidden" id="sessionBar" style="margin-bottom:12px;">
   <div class="row" style="justify-content: space-between;">
@@ -1887,7 +2158,6 @@
 
 <div class="section" id="authSection">
   <h3 style="margin-top:0">Login</h3>
-  <div class="hint">Use your tournament account. Initial Synology login: <b>admin</b> / <b>admin</b>. Change it after setup.</div>
 
   <div id="loginPanel">
     <label for="loginUsername">Username</label>
@@ -1912,7 +2182,7 @@
   </div>
 </div>
 <!-- Top tab bar (centered feature navigation) -->
-<div class="bottomNav" id="bottomNav" role="tablist" aria-label="Tournament features">
+<div class="bottomNav" id="bottomNav" role="tablist" aria-label="Tournament features" aria-orientation="horizontal">
   <button id="tabTournament" class="bottomNavBtn active" data-view="tournament" role="tab" aria-controls="viewTournament" aria-selected="true">Tournament</button>
   <button id="tabPlayers" class="bottomNavBtn" data-view="players" role="tab" aria-controls="viewPlayers" aria-selected="false">Players</button>
   <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
@@ -2523,10 +2793,17 @@ const STORAGE_KEYS = {
   const shuttleBorrowersOutput = document.getElementById('shuttleBorrowersOutput');
   const shuttleHistoryOutput = document.getElementById('shuttleHistoryOutput');
 
+  document.querySelectorAll('.authStatus').forEach(el => {
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-atomic', 'true');
+  });
+
   // active view
   let currentView = 'tournament';
   let historyCalendarCursor = null;
   let leaderboardControlsInitialized = false;
+  let scoreRenderTimer = null;
 
   // ----------------------------
   // State
@@ -2882,6 +3159,7 @@ const STORAGE_KEYS = {
     const headerRow = document.createElement('tr');
     headers.forEach(label => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = label;
       headerRow.appendChild(th);
     });
@@ -3152,11 +3430,11 @@ const STORAGE_KEYS = {
   }
 
   function setActivePlayersList(players) {
+    const nextPlayers = [...(players || [])];
+    setHomePlayersDraft(nextPlayers);
     if (tournament) {
-      tournament.players = [...(players || [])];
+      tournament.players = nextPlayers;
       saveTournamentAndRefresh();
-    } else {
-      setHomePlayersDraft(players || []);
     }
   }
 
@@ -3175,8 +3453,15 @@ const STORAGE_KEYS = {
 
   function saveTournament() {
     if (!tournament) return;
+    syncVisibleScoreInputsToTournament();
     localStorage.setItem(STORAGE_KEYS.tournamentPrefix + tournament.id, JSON.stringify(tournament));
     localStorage.setItem(STORAGE_KEYS.activeTournamentId, tournament.id);
+    const visibleScoreRows = collectVisibleScoreRows();
+    if (visibleScoreRows.length > 0) {
+      window.btAuth?.syncScoreRows?.(tournament.id, visibleScoreRows);
+    } else {
+      window.btAuth?.syncTournamentScores?.(tournament);
+    }
   }
 
   function upsertTournamentIndex(t) {
@@ -3508,6 +3793,7 @@ const STORAGE_KEYS = {
     const trh = document.createElement('tr');
     ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Days Played'].forEach(h => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = h;
       trh.appendChild(th);
     });
@@ -3847,6 +4133,7 @@ const STORAGE_KEYS = {
     const header = document.createElement('tr');
     ['Tournament', 'Team / Players', 'Result', 'Matches', 'Record', 'PF', 'PA', 'PD', 'Rank Pts'].forEach(label => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = label;
       header.appendChild(th);
     });
@@ -4051,6 +4338,7 @@ const STORAGE_KEYS = {
     const trh = document.createElement('tr');
     headers.forEach(header => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = header;
       trh.appendChild(th);
     });
@@ -4475,7 +4763,7 @@ const STORAGE_KEYS = {
       const del = document.createElement('button');
       del.className = 'danger removeIconBtn';
       del.type = 'button';
-      del.textContent = '×';
+      del.textContent = '\u00d7';
       del.setAttribute('aria-label', `Remove ${player}`);
       del.title = `Remove ${player}`;
       del.addEventListener('click', () => {
@@ -4677,6 +4965,7 @@ const STORAGE_KEYS = {
         : ["Team", "Player"];
       cols.forEach(h => {
         const th = document.createElement("th");
+        th.scope = "col";
         th.textContent = h;
         trh.appendChild(th);
       });
@@ -5270,7 +5559,8 @@ const STORAGE_KEYS = {
     match[`score${opponentSide}`] = parseScore(opponentScoreInput.value);
     syncScheduleScoreInput(match.id, teamSide, teamScoreInput.value);
     syncScheduleScoreInput(match.id, opponentSide, opponentScoreInput.value);
-    saveTournamentAndRefresh();
+    saveTournament();
+    scheduleScoreRender();
   }
 
   function createPointsFixtureDetailRow(team, columnCount) {
@@ -5308,10 +5598,15 @@ const STORAGE_KEYS = {
 
     const table = document.createElement('table');
     table.className = 'pointsFixtureTable';
+    const caption = document.createElement('caption');
+    caption.className = 'srOnly';
+    caption.textContent = `${getTeamDisplayName(team)} fixture score entry`;
+    table.appendChild(caption);
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     ['Match', 'Team', 'Team Score', 'Opponent Score', 'Opponent'].forEach(label => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = label;
       headerRow.appendChild(th);
     });
@@ -5334,6 +5629,9 @@ const STORAGE_KEYS = {
       teamScoreInput.type = 'number';
       teamScoreInput.min = '0';
       teamScoreInput.className = 'scoreInput';
+      teamScoreInput.dataset.matchId = String(match.id);
+      teamScoreInput.dataset.scoreSide = teamIsFirst ? '1' : '2';
+      teamScoreInput.inputMode = 'numeric';
       teamScoreInput.setAttribute('aria-label', `${getTeamDisplayName(team)} score for ${match.id}`);
       const teamScore = teamIsFirst ? match.score1 : match.score2;
       teamScoreInput.value = teamScore === null || teamScore === undefined ? '' : teamScore;
@@ -5344,6 +5642,9 @@ const STORAGE_KEYS = {
       opponentScoreInput.type = 'number';
       opponentScoreInput.min = '0';
       opponentScoreInput.className = 'scoreInput';
+      opponentScoreInput.dataset.matchId = String(match.id);
+      opponentScoreInput.dataset.scoreSide = teamIsFirst ? '2' : '1';
+      opponentScoreInput.inputMode = 'numeric';
       opponentScoreInput.setAttribute('aria-label', `Opponent score for ${match.id}`);
       const opponentScore = teamIsFirst ? match.score2 : match.score1;
       opponentScoreInput.value = opponentScore === null || opponentScore === undefined ? '' : opponentScore;
@@ -5385,10 +5686,15 @@ const STORAGE_KEYS = {
       }
 
       const table = document.createElement('table');
+      const caption = document.createElement('caption');
+      caption.className = 'srOnly';
+      caption.textContent = title ? `${title} standings` : 'Tournament standings';
+      table.appendChild(caption);
       const thead = document.createElement('thead');
       const trh = document.createElement('tr');
       ['Pos', 'Team Players', 'P', 'W', 'L', 'PF', 'PA', 'PD', 'Pts'].forEach(h => {
         const th = document.createElement('th');
+        th.scope = 'col';
         th.textContent = h;
         trh.appendChild(th);
       });
@@ -5417,6 +5723,7 @@ const STORAGE_KEYS = {
             teamButton.className = 'pointsTeamButton';
             teamButton.textContent = c;
             teamButton.setAttribute('aria-expanded', String(expandedPointsTeam === s.team));
+            teamButton.setAttribute('aria-label', `${expandedPointsTeam === s.team ? 'Hide' : 'Show'} fixtures for ${c}`);
             teamButton.title = 'Show this team\'s fixtures and enter scores';
             teamButton.addEventListener('click', () => {
               expandedPointsTeam = expandedPointsTeam === s.team ? null : s.team;
@@ -5499,10 +5806,15 @@ const STORAGE_KEYS = {
 
       const table = document.createElement('table');
       table.className = 'scheduleTable';
+      const caption = document.createElement('caption');
+      caption.className = 'srOnly';
+      caption.textContent = key === 'ALL' ? 'Scheduled games score entry' : `${key} scheduled games score entry`;
+      table.appendChild(caption);
       const thead = document.createElement('thead');
       const trh = document.createElement('tr');
       ['Match', 'Team 1', 'Score', 'vs', 'Score', 'Team 2'].forEach(h => {
         const th = document.createElement('th');
+        th.scope = 'col';
         th.textContent = h;
         trh.appendChild(th);
       });
@@ -5528,6 +5840,8 @@ const STORAGE_KEYS = {
         i1.className = 'scoreInput';
         i1.dataset.matchId = String(m.id);
         i1.dataset.scoreSide = '1';
+        i1.inputMode = 'numeric';
+        i1.setAttribute('aria-label', `${getTeamDisplayName(m.team1)} score for match ${m.id}`);
         i1.style.width = '70px';
         i1.value = m.score1 === null || m.score1 === undefined ? '' : m.score1;
         tdS1.appendChild(i1);
@@ -5544,6 +5858,8 @@ const STORAGE_KEYS = {
         i2.className = 'scoreInput';
         i2.dataset.matchId = String(m.id);
         i2.dataset.scoreSide = '2';
+        i2.inputMode = 'numeric';
+        i2.setAttribute('aria-label', `${getTeamDisplayName(m.team2)} score for match ${m.id}`);
         i2.style.width = '70px';
         i2.value = m.score2 === null || m.score2 === undefined ? '' : m.score2;
         const focusSecondScoreWhenReady = () => {
@@ -5585,15 +5901,112 @@ const STORAGE_KEYS = {
   // ----------------------------
   // Score handling & updates
   // ----------------------------
+  function patchTournamentScore(match, which) {
+    if (!tournament || !match || !window.btAuth?.patchMatchScore) return;
+    const scoreSide = which === 'score1' ? 1 : which === 'score2' ? 2 : Number(which);
+    if (scoreSide !== 1 && scoreSide !== 2) return;
+    const scoreValue = scoreSide === 1 ? match.score1 : match.score2;
+    window.btAuth.patchMatchScore(tournament.id, match.id, scoreSide, scoreValue);
+  }
+
+  function parseScoreInputValue(rawVal) {
+    if (rawVal === '' || rawVal === null || rawVal === undefined) return null;
+    const parsed = parseInt(rawVal, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function tournamentMatchesById(matchId) {
+    if (!tournament) return [];
+    const id = String(matchId);
+    const matches = [];
+    const add = (match) => {
+      if (!match || typeof match !== 'object') return;
+      if (String(match.id) !== id) return;
+      if (!matches.includes(match)) matches.push(match);
+    };
+    (tournament.matches || []).forEach(add);
+    add(tournament.finalMatch);
+    const knockout = tournament.knockout || {};
+    ['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'].forEach((key) => add(knockout[key]));
+    return matches;
+  }
+
+  function applyScoreToTournamentMatch(matchId, which, rawVal) {
+    const scoreSide = which === 'score1' ? 1 : which === 'score2' ? 2 : Number(which);
+    if (scoreSide !== 1 && scoreSide !== 2) return null;
+    const scoreKey = scoreSide === 1 ? 'score1' : 'score2';
+    const value = parseScoreInputValue(rawVal);
+    const matches = tournamentMatchesById(matchId);
+    matches.forEach(match => {
+      match[scoreKey] = value;
+    });
+    return matches[0] || null;
+  }
+
+  function scoreInputIsVisible(input) {
+    return !!input && !input.disabled && !input.closest('[hidden], .hidden');
+  }
+
+  function syncVisibleScoreInputsToTournament() {
+    if (!tournament) return;
+    document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]').forEach(input => {
+      if (!scoreInputIsVisible(input)) return;
+      applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
+    });
+  }
+
+  function collectVisibleScoreRows() {
+    if (!tournament) return [];
+    const rowsById = new Map();
+    document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]').forEach(input => {
+      if (!scoreInputIsVisible(input)) return;
+      const matchId = String(input.dataset.matchId || '').trim();
+      const scoreSide = String(input.dataset.scoreSide || '');
+      const score = parseScoreInputValue(input.value);
+      if (!matchId || score === null) return;
+      const row = rowsById.get(matchId) || { match_id: matchId, score1: null, score2: null };
+      if (scoreSide === '1') row.score1 = score;
+      if (scoreSide === '2') row.score2 = score;
+      rowsById.set(matchId, row);
+    });
+    return [...rowsById.values()].filter(row => row.score1 !== null || row.score2 !== null);
+  }
+
   function updateMatchScore(matchId, which, rawVal) {
     if (!tournament) return null;
-    const match = tournament.matches.find(m => m.id === matchId);
-    if (!match) return null;
+    return applyScoreToTournamentMatch(matchId, which, rawVal);
+  }
 
-    const v = rawVal === '' ? null : parseInt(rawVal, 10);
-    if (which === 1) match.score1 = Number.isFinite(v) ? v : null;
-    if (which === 2) match.score2 = Number.isFinite(v) ? v : null;
-    return match;
+  function getActiveScoreInputSnapshot() {
+    const active = document.activeElement;
+    if (!active?.matches?.('input.scoreInput[data-match-id][data-score-side]')) return null;
+    return {
+      matchId: active.dataset.matchId,
+      scoreSide: active.dataset.scoreSide,
+    };
+  }
+
+  function restoreScoreInputFocus(snapshot) {
+    if (!snapshot) return;
+    const target = [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
+      .find(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide);
+    if (!target || target.disabled || target.closest('[hidden], .hidden')) return;
+    try {
+      target.focus({ preventScroll: true });
+    } catch {
+      target.focus();
+    }
+  }
+
+  function scheduleScoreRender() {
+    window.clearTimeout(scoreRenderTimer);
+    scoreRenderTimer = window.setTimeout(() => {
+      scoreRenderTimer = null;
+      if (!tournament) return;
+      const focusSnapshot = getActiveScoreInputSnapshot();
+      recalcAndRender();
+      restoreScoreInputFocus(focusSnapshot);
+    }, 240);
   }
 
   function onScoreDraftInput(matchId, which, rawVal) {
@@ -5604,12 +6017,23 @@ const STORAGE_KEYS = {
   function onScoreInput(matchId, which, rawVal) {
     const match = updateMatchScore(matchId, which, rawVal);
     if (!match) return;
-
-    if (tournament.type === "Knockout") progressKnockoutBracket();
-
-    recalcAndRender();
-    saveTournamentAndRefresh();
+    scheduleScoreRender();
   }
+
+  document.addEventListener('input', (event) => {
+    const input = event.target?.closest?.('input.scoreInput[data-match-id][data-score-side]');
+    if (!input || !tournament) return;
+    const match = applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
+    patchTournamentScore(match, input.dataset.scoreSide);
+  }, true);
+
+  document.addEventListener('change', (event) => {
+    const input = event.target?.closest?.('input.scoreInput[data-match-id][data-score-side]');
+    if (!input || !tournament) return;
+    applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
+    scheduleScoreRender();
+    saveTournament();
+  }, true);
 
   function getPlayoffFormatLabel(format) {
     if (format === 'Final') return 'Top 2 Final';
@@ -5766,10 +6190,15 @@ const STORAGE_KEYS = {
 function createFinalsScheduleTable(matches, handleScore) {
   const table = document.createElement('table');
   table.className = 'scheduleTable';
+  const caption = document.createElement('caption');
+  caption.className = 'srOnly';
+  caption.textContent = 'Finals score entry';
+  table.appendChild(caption);
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
   ['Stage', 'Team 1', 'Score', 'vs', 'Score', 'Team 2'].forEach(label => {
     const th = document.createElement('th');
+    th.scope = 'col';
     th.textContent = label;
     headerRow.appendChild(th);
   });
@@ -5794,6 +6223,8 @@ function createFinalsScheduleTable(matches, handleScore) {
       input.className = 'scoreInput';
       input.dataset.matchId = String(match.id);
       input.dataset.scoreSide = scoreKey === 'score1' ? '1' : '2';
+      input.inputMode = 'numeric';
+      input.setAttribute('aria-label', `${getTeamDisplayName(scoreKey === 'score1' ? match.team1 : match.team2)} score for ${match.stage || 'final'} match ${match.id}`);
       input.style.width = '70px';
       input.min = 0;
       input.value = match[scoreKey] ?? '';
@@ -5989,7 +6420,7 @@ function renderFinalSummary(finalMatch) {
       groupsCount: 0,
       teamsPerGroup: 0,
       knockoutRoundOf: 0,
-      players: [],
+      players: [...getHomePlayersDraft()],
       teams: [],
       teamPlayers: {},
       groupAssignments: [],
@@ -6040,6 +6471,10 @@ function renderFinalSummary(finalMatch) {
     renderPlayersList();
     renderTeamsPreview();
     renderGroupsAssignment();
+    if (Array.isArray(tournament.matches) && tournament.matches.length > 0) {
+      renderSchedule(tournament.matches);
+      recalcAndRender();
+    }
     updateGenerateScheduleBtn();
     savePlayerListBtn.disabled = (tournament.players || []).length === 0;
     updateBuildTeamsBtn();
@@ -6633,6 +7068,7 @@ function renderFinalSummary(finalMatch) {
     const header = document.createElement('tr');
     ['Username', 'Name', 'Admin', 'Reset Required', 'Active', 'Actions'].forEach(h => {
       const th = document.createElement('th');
+      th.scope = 'col';
       th.textContent = h;
       header.appendChild(th);
     });
@@ -6724,12 +7160,15 @@ function renderFinalSummary(finalMatch) {
         let loginError = 'Invalid username or password.';
         if (message.includes('Login session limit exceeded')) {
           loginError = sessionLimitMessage;
+        } else if (/405 not allowed|static host/i.test(message)) {
+          loginError = 'The API endpoint did not accept the login request. Confirm the site is hosted on PHP 8.3.19 and api.php is uploaded beside index.php.';
         } else if (/storage|permission|writable|data store/i.test(message)) {
-          loginError = 'The server cannot write to the storage folder. Grant the Web Station http account read/write permission.';
-        } else if (/failed to fetch|networkerror|load failed/i.test(message)) {
-          loginError = 'Cannot reach api.php. Confirm this Web Station portal has a PHP profile enabled.';
+          loginError = 'The server cannot save application data. Confirm the MySQL database credentials are correct and the tables can be created.';
+        } else if (/failed to fetch|networkerror|network error|load failed/i.test(message)) {
+          const apiUrl = window.btApiUrl || 'api.php';
+          loginError = `Cannot reach API at ${apiUrl}. Open ${apiUrl}?action=ping in the browser; it should show JSON.`;
         } else if (/unexpected token|invalid json|invalid api response|no session token|<!doctype|<html|<\?php/i.test(message)) {
-          loginError = `${message} PHP 7.0 is supported; make sure PHP 7.0 is assigned to this Web Station portal.`;
+          loginError = `${message} Confirm this site is running through PHP 8.3.19 and api.php is uploaded beside index.php.`;
         } else if (message && !message.includes('Invalid username or password')) {
           loginError = `Server login error: ${message.slice(0, 240)}`;
         }
@@ -6882,6 +7321,21 @@ function renderFinalSummary(finalMatch) {
   if (bottomNav) {
     bottomNavButtons().forEach(btn => {
       btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+    bottomNav.addEventListener('keydown', (event) => {
+      const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+      if (!keys.includes(event.key)) return;
+      const tabs = [...bottomNavButtons()].filter(btn => !btn.disabled && !btn.hidden);
+      if (!tabs.length) return;
+      const currentIndex = Math.max(0, tabs.indexOf(document.activeElement));
+      let nextIndex = currentIndex;
+      if (event.key === 'Home') nextIndex = 0;
+      else if (event.key === 'End') nextIndex = tabs.length - 1;
+      else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+      event.preventDefault();
+      tabs[nextIndex].focus();
+      setView(tabs[nextIndex].dataset.view);
     });
   }
   const activeTournamentId = localStorage.getItem(STORAGE_KEYS.activeTournamentId);

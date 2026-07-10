@@ -1,4 +1,6 @@
-Badminton Tournament Manager - Synology Web Station Edition
-Package date: 2026-06-28
-Runtime: PHP 7.0+ (PHP 8.2 recommended)
+Badminton Tournament Manager - InfinityFree MySQL Edition
+Package date: 2026-07-10
+Runtime target: PHP 8.3.19
+Minimum runtime: PHP 8.3.x
+Database: MySQL
 Initial login: admin / admin
