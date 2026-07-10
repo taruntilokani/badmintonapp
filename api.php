@@ -14,6 +14,10 @@ require_once __DIR__ . DIRECTORY_SEPARATOR . 'database.php';
 
 const SESSION_IDLE_SECONDS = 120;
 const MAX_ACTIVE_SESSIONS = 3;
+const TOURNAMENT_KEY_PREFIX = 'bt_tournament_v1_';
+const PLAYER_LIST_KEY_PREFIX = 'bt_playerlist_v1_';
+const TOURNAMENTS_INDEX_KEY = 'bt_tournaments_index_v1';
+const PLAYER_LISTS_INDEX_KEY = 'bt_playerlists_index_v1';
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
@@ -49,6 +53,7 @@ function initializeDatabase(): void
         $pdo = db();
         btCreateSchema($pdo);
         ensureInitialAdmin();
+        migrateLegacyAppState();
         cleanupExpiredSessions();
     } catch (Throwable $error) {
         fail('Database initialization failed: ' . $error->getMessage(), 500);
@@ -141,6 +146,885 @@ function cleanupExpiredSessions(): void
     $statement->execute([time()]);
 }
 
+function findSessionByToken(string $token): ?array
+{
+    cleanupExpiredSessions();
+    $statement = db()->prepare('SELECT username, expires_at FROM bt_sessions WHERE token = ? LIMIT 1');
+    $statement->execute([$token]);
+    $session = $statement->fetch();
+    if (!is_array($session)) {
+        return null;
+    }
+    return [
+        'username' => (string) $session['username'],
+        'expires_at' => (int) $session['expires_at'],
+    ];
+}
+
+function countActiveSessionsForUser(string $username): int
+{
+    cleanupExpiredSessions();
+    $statement = db()->prepare('SELECT COUNT(*) FROM bt_sessions WHERE username = ?');
+    $statement->execute([$username]);
+    return (int) $statement->fetchColumn();
+}
+
+function createSessionRow(string $token, string $username, int $expiresAt): void
+{
+    $statement = db()->prepare('
+        INSERT INTO bt_sessions (token, username, expires_at, created_at)
+        VALUES (?, ?, ?, ?)
+    ');
+    $statement->execute([$token, $username, $expiresAt, nowIso()]);
+}
+
+function updateSessionExpiry(string $token, int $expiresAt): void
+{
+    $statement = db()->prepare('UPDATE bt_sessions SET expires_at = ? WHERE token = ?');
+    $statement->execute([$expiresAt, $token]);
+}
+
+function deleteSessionToken(string $token): void
+{
+    if ($token === '') {
+        return;
+    }
+    $statement = db()->prepare('DELETE FROM bt_sessions WHERE token = ?');
+    $statement->execute([$token]);
+}
+
+function deleteOtherSessionsForUser(string $username, string $keepToken): void
+{
+    $statement = db()->prepare('DELETE FROM bt_sessions WHERE username = ? AND token <> ?');
+    $statement->execute([$username, $keepToken]);
+}
+
+function jsMillisecondsFromIso(string $value): int
+{
+    $timestamp = strtotime($value);
+    return $timestamp === false ? 0 : $timestamp * 1000;
+}
+
+function boundedString($value, int $maxLength): string
+{
+    return substr(trim((string) $value), 0, $maxLength);
+}
+
+function databaseId($value, string $label): string
+{
+    $id = trim((string) $value);
+    if ($id === '') {
+        fail($label . ' is required.', 400);
+    }
+    if (strlen($id) > 191) {
+        fail($label . ' is too long.', 400);
+    }
+    return $id;
+}
+
+function ownerUsername($username): string
+{
+    return substr(normalizeUsername($username), 0, 40);
+}
+
+function decodeStoredArray(string $json): ?array
+{
+    $decoded = json_decode($json, true);
+    return is_array($decoded) ? $decoded : null;
+}
+
+function nullableScore($value): ?int
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+    if (!is_numeric($value)) {
+        return null;
+    }
+    $score = (int) $value;
+    return $score >= 0 && $score <= 32767 ? $score : null;
+}
+
+function requestScore($value): ?int
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+    if (!is_numeric($value)) {
+        fail('Score must be a number or blank.', 400);
+    }
+    $score = (int) $value;
+    if ($score < 0 || $score > 32767) {
+        fail('Score must be between 0 and 32767.', 400);
+    }
+    return $score;
+}
+
+function addTournamentMatch(array &$matches, $candidate): void
+{
+    if (!is_array($candidate)) {
+        return;
+    }
+    $matchId = trim((string) ($candidate['id'] ?? ''));
+    if ($matchId === '' || strlen($matchId) > 191) {
+        return;
+    }
+    if (!matchHasParticipants($candidate)) {
+        return;
+    }
+    $matches[$matchId] = $candidate;
+}
+
+function matchHasParticipants(array $match): bool
+{
+    return trim((string) ($match['team1'] ?? '')) !== ''
+        || trim((string) ($match['team2'] ?? '')) !== '';
+}
+
+function tournamentMatches(array $tournament): array
+{
+    $matches = [];
+    if (isset($tournament['matches']) && is_array($tournament['matches'])) {
+        foreach ($tournament['matches'] as $match) {
+            addTournamentMatch($matches, $match);
+        }
+    }
+    addTournamentMatch($matches, $tournament['finalMatch'] ?? null);
+    $knockout = $tournament['knockout'] ?? null;
+    if (is_array($knockout)) {
+        foreach (['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'] as $key) {
+            addTournamentMatch($matches, $knockout[$key] ?? null);
+        }
+    }
+    return $matches;
+}
+
+function countScoredMatches(array $matches): int
+{
+    $count = 0;
+    foreach ($matches as $match) {
+        if (!is_array($match)) {
+            continue;
+        }
+        if (nullableScore($match['score1'] ?? null) !== null || nullableScore($match['score2'] ?? null) !== null) {
+            $count++;
+        }
+    }
+    return $count;
+}
+
+function tournamentTeamDisplayName(array $tournament, $team): string
+{
+    $teamKey = trim((string) $team);
+    if ($teamKey === '') {
+        return '';
+    }
+    $teamPlayers = $tournament['teamPlayers'] ?? null;
+    $players = is_array($teamPlayers) && isset($teamPlayers[$teamKey]) && is_array($teamPlayers[$teamKey])
+        ? $teamPlayers[$teamKey]
+        : [];
+    $names = [];
+    foreach ($players as $player) {
+        $name = trim((string) $player);
+        if ($name !== '') {
+            $names[] = $name;
+        }
+    }
+    return $names === [] ? $teamKey : implode(' / ', $names);
+}
+
+function storedMatchTeamKeys(array $row): array
+{
+    $stored = decodeStoredArray((string) ($row['data_json'] ?? '')) ?: [];
+    return [
+        (string) ($stored['team1'] ?? $row['team1'] ?? ''),
+        (string) ($stored['team2'] ?? $row['team2'] ?? ''),
+    ];
+}
+
+function matchParticipantsChanged(array $row, array $match): bool
+{
+    [$rowTeam1, $rowTeam2] = storedMatchTeamKeys($row);
+    if ($rowTeam1 === '' && $rowTeam2 === '') {
+        return false;
+    }
+    return $rowTeam1 !== (string) ($match['team1'] ?? '')
+        || $rowTeam2 !== (string) ($match['team2'] ?? '');
+}
+
+function normalizeStoredMatchRow(array $row): array
+{
+    $match = decodeStoredArray((string) ($row['data_json'] ?? '')) ?: [];
+    $match['id'] = (string) ($match['id'] ?? $row['match_id'] ?? '');
+    $match['team1'] = (string) ($match['team1'] ?? $row['team1'] ?? '');
+    $match['team2'] = (string) ($match['team2'] ?? $row['team2'] ?? '');
+    $match['stage'] = (string) ($match['stage'] ?? $row['stage'] ?? '');
+    if (!array_key_exists('groupIndex', $match)) {
+        $match['groupIndex'] = $row['group_index'] === null ? null : (int) $row['group_index'];
+    }
+    if (!array_key_exists('knockoutRound', $match) && $row['knockout_round'] !== null) {
+        $match['knockoutRound'] = (int) $row['knockout_round'];
+    }
+    $match['score1'] = $row['score1'] === null ? null : (int) $row['score1'];
+    $match['score2'] = $row['score2'] === null ? null : (int) $row['score2'];
+    return $match;
+}
+
+function matchSortValue(array $match): int
+{
+    $id = $match['id'] ?? '';
+    return is_numeric($id) ? (int) $id : PHP_INT_MAX;
+}
+
+function applyStoredScoreToMatch(&$match, array $rowsById, bool $onlyFillMissing = false): void
+{
+    if (!is_array($match)) {
+        return;
+    }
+    $matchId = trim((string) ($match['id'] ?? ''));
+    if ($matchId === '' || !isset($rowsById[$matchId]) || matchParticipantsChanged($rowsById[$matchId], $match)) {
+        return;
+    }
+    $row = $rowsById[$matchId];
+    if (!$onlyFillMissing || !hasNumericScoreValue($match['score1'] ?? null)) {
+        $match['score1'] = $row['score1'] === null ? null : (int) $row['score1'];
+    }
+    if (!$onlyFillMissing || !hasNumericScoreValue($match['score2'] ?? null)) {
+        $match['score2'] = $row['score2'] === null ? null : (int) $row['score2'];
+    }
+}
+
+function hasNumericScoreValue($value): bool
+{
+    return $value !== null && $value !== '' && is_numeric($value);
+}
+
+function overlayStoredMatchScores(array $tournament, string $tournamentId): array
+{
+    $statement = db()->prepare('
+        SELECT match_id, stage, group_index, knockout_round, team1, team2, score1, score2, data_json
+        FROM bt_tournament_matches
+        WHERE tournament_id = ?
+    ');
+    $statement->execute([$tournamentId]);
+    $rowsById = [];
+    foreach ($statement->fetchAll() as $row) {
+        $rowsById[(string) $row['match_id']] = $row;
+    }
+    if ($rowsById === []) {
+        return $tournament;
+    }
+
+    $storedMatches = [];
+    foreach ($rowsById as $matchId => $row) {
+        $storedMatch = normalizeStoredMatchRow($row);
+        if (matchHasParticipants($storedMatch)) {
+            $storedMatches[$matchId] = $storedMatch;
+        }
+    }
+
+    if (isset($tournament['matches']) && is_array($tournament['matches'])) {
+        $cleanMatches = [];
+        foreach ($tournament['matches'] as $match) {
+            if (!is_array($match) || !matchHasParticipants($match)) {
+                continue;
+            }
+            applyStoredScoreToMatch($match, $rowsById);
+            $cleanMatches[] = $match;
+            $matchId = (string) ($match['id'] ?? '');
+            if ($matchId !== '') {
+                unset($storedMatches[$matchId]);
+            }
+        }
+        $tournament['matches'] = $cleanMatches;
+    } else {
+        $tournament['matches'] = [];
+    }
+
+    if ($storedMatches !== []) {
+        foreach ($storedMatches as $storedMatch) {
+            $tournament['matches'][] = $storedMatch;
+        }
+        usort($tournament['matches'], function (array $a, array $b): int {
+            $left = matchSortValue($a);
+            $right = matchSortValue($b);
+            if ($left !== $right) {
+                return $left <=> $right;
+            }
+            return strcmp((string) ($a['id'] ?? ''), (string) ($b['id'] ?? ''));
+        });
+    }
+
+    if (isset($tournament['finalMatch']) && is_array($tournament['finalMatch'])) {
+        $match = $tournament['finalMatch'];
+        applyStoredScoreToMatch($match, $rowsById);
+        $tournament['finalMatch'] = $match;
+    }
+    if (isset($tournament['knockout']) && is_array($tournament['knockout'])) {
+        foreach (['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'] as $key) {
+            if (isset($tournament['knockout'][$key]) && is_array($tournament['knockout'][$key])) {
+                $match = $tournament['knockout'][$key];
+                applyStoredScoreToMatch($match, $rowsById);
+                $tournament['knockout'][$key] = $match;
+            }
+        }
+    }
+
+    return $tournament;
+}
+
+function fillMissingTournamentScoresFromStoredRows(array $tournament, string $tournamentId): array
+{
+    $statement = db()->prepare('
+        SELECT match_id, team1, team2, score1, score2, data_json
+        FROM bt_tournament_matches
+        WHERE tournament_id = ?
+    ');
+    $statement->execute([$tournamentId]);
+    $rowsById = [];
+    foreach ($statement->fetchAll() as $row) {
+        $rowsById[(string) $row['match_id']] = $row;
+    }
+    if ($rowsById === []) {
+        return $tournament;
+    }
+
+    if (isset($tournament['matches']) && is_array($tournament['matches'])) {
+        foreach ($tournament['matches'] as $index => $match) {
+            applyStoredScoreToMatch($match, $rowsById, true);
+            $tournament['matches'][$index] = $match;
+        }
+    }
+    if (isset($tournament['finalMatch']) && is_array($tournament['finalMatch'])) {
+        $match = $tournament['finalMatch'];
+        applyStoredScoreToMatch($match, $rowsById, true);
+        $tournament['finalMatch'] = $match;
+    }
+    if (isset($tournament['knockout']) && is_array($tournament['knockout'])) {
+        foreach (['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'] as $key) {
+            if (isset($tournament['knockout'][$key]) && is_array($tournament['knockout'][$key])) {
+                $match = $tournament['knockout'][$key];
+                applyStoredScoreToMatch($match, $rowsById, true);
+                $tournament['knockout'][$key] = $match;
+            }
+        }
+    }
+
+    return $tournament;
+}
+
+function syncTournamentMatchRows(string $tournamentId, array $tournament): void
+{
+    $matches = tournamentMatches($tournament);
+    $pdo = db();
+
+    if ($matches === []) {
+        $statement = $pdo->prepare('DELETE FROM bt_tournament_matches WHERE tournament_id = ?');
+        $statement->execute([$tournamentId]);
+        return;
+    }
+
+    $matchIds = array_keys($matches);
+    $placeholders = implode(', ', array_fill(0, count($matchIds), '?'));
+    $delete = $pdo->prepare("DELETE FROM bt_tournament_matches WHERE tournament_id = ? AND match_id NOT IN ($placeholders)");
+    $delete->execute(array_merge([$tournamentId], $matchIds));
+
+    $now = nowIso();
+    $statement = $pdo->prepare('
+        INSERT INTO bt_tournament_matches
+            (tournament_id, match_id, stage, group_index, knockout_round, team1, team2, score1, score2, data_json, version, updated_at)
+        VALUES
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        ON DUPLICATE KEY UPDATE
+            score1 = COALESCE(VALUES(score1), score1),
+            score2 = COALESCE(VALUES(score2), score2),
+            stage = VALUES(stage),
+            group_index = VALUES(group_index),
+            knockout_round = VALUES(knockout_round),
+            team1 = VALUES(team1),
+            team2 = VALUES(team2),
+            data_json = VALUES(data_json),
+            version = version + 1,
+            updated_at = VALUES(updated_at)
+    ');
+
+    foreach ($matches as $matchId => $match) {
+        $statement->execute([
+            $tournamentId,
+            $matchId,
+            boundedString($match['stage'] ?? '', 80),
+            isset($match['groupIndex']) && is_numeric($match['groupIndex']) ? (int) $match['groupIndex'] : null,
+            isset($match['knockoutRound']) && is_numeric($match['knockoutRound']) ? (int) $match['knockoutRound'] : null,
+            boundedString(tournamentTeamDisplayName($tournament, $match['team1'] ?? ''), 255),
+            boundedString(tournamentTeamDisplayName($tournament, $match['team2'] ?? ''), 255),
+            nullableScore($match['score1'] ?? null),
+            nullableScore($match['score2'] ?? null),
+            jsonEncodeValue($match),
+            $now,
+        ]);
+    }
+}
+
+function tournamentExists(string $tournamentId): bool
+{
+    $statement = db()->prepare('SELECT 1 FROM bt_tournaments WHERE tournament_id = ? LIMIT 1');
+    $statement->execute([$tournamentId]);
+    return (bool) $statement->fetchColumn();
+}
+
+function playerListExists(string $ownerUsername, string $listId): bool
+{
+    $statement = db()->prepare('SELECT 1 FROM bt_player_lists WHERE owner_username = ? AND list_id = ? LIMIT 1');
+    $statement->execute([ownerUsername($ownerUsername), $listId]);
+    return (bool) $statement->fetchColumn();
+}
+
+function upsertTournamentRecord(array $tournament, bool $deleteLegacy = true): int
+{
+    $tournamentId = databaseId($tournament['id'] ?? '', 'Tournament id');
+    $tournament = fillMissingTournamentScoresFromStoredRows($tournament, $tournamentId);
+    $name = boundedString($tournament['name'] ?? 'Untitled Tournament', 255) ?: 'Untitled Tournament';
+    $scheduledDate = boundedString($tournament['scheduledDate'] ?? '', 32);
+    $dataJson = jsonEncodeValue($tournament);
+    $now = nowIso();
+    $hash = hash('sha256', $dataJson);
+
+    $statement = db()->prepare('
+        INSERT INTO bt_tournaments
+            (tournament_id, name, scheduled_date, data_json, data_hash, version, created_at, updated_at)
+        VALUES
+            (?, ?, ?, ?, ?, 1, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            scheduled_date = VALUES(scheduled_date),
+            data_json = VALUES(data_json),
+            data_hash = VALUES(data_hash),
+            version = version + 1,
+            updated_at = VALUES(updated_at)
+    ');
+    $statement->execute([$tournamentId, $name, $scheduledDate, $dataJson, $hash, $now, $now]);
+    syncTournamentMatchRows($tournamentId, $tournament);
+
+    if ($deleteLegacy) {
+        $legacyKey = TOURNAMENT_KEY_PREFIX . $tournamentId;
+        db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$legacyKey]);
+        db()->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$legacyKey]);
+    }
+
+    $version = db()->prepare('SELECT version FROM bt_tournaments WHERE tournament_id = ?');
+    $version->execute([$tournamentId]);
+    return (int) $version->fetchColumn();
+}
+
+function deleteTournamentRecord(string $tournamentId): void
+{
+    $tournamentId = databaseId($tournamentId, 'Tournament id');
+    $pdo = db();
+    $pdo->prepare('DELETE FROM bt_tournament_matches WHERE tournament_id = ?')->execute([$tournamentId]);
+    $pdo->prepare('DELETE FROM bt_tournaments WHERE tournament_id = ?')->execute([$tournamentId]);
+    $legacyKey = TOURNAMENT_KEY_PREFIX . $tournamentId;
+    $pdo->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$legacyKey]);
+    $pdo->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$legacyKey]);
+}
+
+function upsertPlayerListRecord(string $ownerUsername, string $storageKey, array $value, bool $deleteLegacy = true): int
+{
+    if (!startsWith($storageKey, PLAYER_LIST_KEY_PREFIX)) {
+        fail('A valid player list key is required.', 400);
+    }
+    $ownerUsername = ownerUsername($ownerUsername);
+    $listId = databaseId(substr($storageKey, strlen(PLAYER_LIST_KEY_PREFIX)), 'Player list id');
+    $name = boundedString($value['name'] ?? $listId, 255) ?: $listId;
+    $players = isset($value['players']) && is_array($value['players']) ? $value['players'] : [];
+    $playerCount = min(count($players), 65535);
+    $dataJson = jsonEncodeValue($value);
+    $now = nowIso();
+    $hash = hash('sha256', $dataJson);
+
+    $statement = db()->prepare('
+        INSERT INTO bt_player_lists
+            (owner_username, list_id, name, player_count, data_json, data_hash, version, created_at, updated_at)
+        VALUES
+            (?, ?, ?, ?, ?, ?, 1, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            player_count = VALUES(player_count),
+            data_json = VALUES(data_json),
+            data_hash = VALUES(data_hash),
+            version = version + 1,
+            updated_at = VALUES(updated_at)
+    ');
+    $statement->execute([$ownerUsername, $listId, $name, $playerCount, $dataJson, $hash, $now, $now]);
+
+    if ($deleteLegacy) {
+        db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$storageKey]);
+        db()->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$storageKey]);
+    }
+
+    $version = db()->prepare('SELECT version FROM bt_player_lists WHERE owner_username = ? AND list_id = ?');
+    $version->execute([$ownerUsername, $listId]);
+    return (int) $version->fetchColumn();
+}
+
+function deletePlayerListRecord(string $ownerUsername, string $listId): void
+{
+    $ownerUsername = ownerUsername($ownerUsername);
+    $listId = databaseId($listId, 'Player list id');
+    $storageKey = PLAYER_LIST_KEY_PREFIX . $listId;
+    $pdo = db();
+    $pdo->prepare('DELETE FROM bt_player_lists WHERE owner_username = ? AND list_id = ?')->execute([$ownerUsername, $listId]);
+    if ($ownerUsername === '') {
+        $pdo->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$storageKey]);
+        $pdo->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$storageKey]);
+    }
+}
+
+function upsertAppSetting(string $ownerUsername, string $key, string $value): void
+{
+    $ownerUsername = ownerUsername($ownerUsername);
+    $key = databaseId($key, 'Storage key');
+    $statement = db()->prepare('
+        INSERT INTO bt_app_settings (owner_username, storage_key, storage_value, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            storage_value = VALUES(storage_value),
+            updated_at = VALUES(updated_at)
+    ');
+    $statement->execute([$ownerUsername, $key, $value, nowIso()]);
+    db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$key]);
+}
+
+function deleteAppSetting(string $ownerUsername, string $key): void
+{
+    $ownerUsername = ownerUsername($ownerUsername);
+    $key = databaseId($key, 'Storage key');
+    db()->prepare('DELETE FROM bt_app_settings WHERE owner_username = ? AND storage_key = ?')->execute([$ownerUsername, $key]);
+    if ($ownerUsername === '') {
+        db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$key]);
+    }
+}
+
+function upsertAppStateKey(string $key, string $value): void
+{
+    upsertAppSetting('', $key, $value);
+}
+
+function deleteAppStateKey(string $key): void
+{
+    deleteAppSetting('', $key);
+}
+
+function applyScorePatchToTournament(array &$tournament, string $matchId, string $scoreKey, ?int $scoreValue): bool
+{
+    $updated = false;
+    if (isset($tournament['matches']) && is_array($tournament['matches'])) {
+        foreach ($tournament['matches'] as $index => $match) {
+            if (is_array($match) && (string) ($match['id'] ?? '') === $matchId) {
+                $match[$scoreKey] = $scoreValue;
+                $tournament['matches'][$index] = $match;
+                $updated = true;
+            }
+        }
+    }
+    if (isset($tournament['finalMatch']) && is_array($tournament['finalMatch']) && (string) ($tournament['finalMatch']['id'] ?? '') === $matchId) {
+        $tournament['finalMatch'][$scoreKey] = $scoreValue;
+        $updated = true;
+    }
+    if (isset($tournament['knockout']) && is_array($tournament['knockout'])) {
+        foreach (['semifinal1', 'semifinal2', 'qualifier1', 'eliminator', 'qualifier2', 'final'] as $key) {
+            if (isset($tournament['knockout'][$key]) && is_array($tournament['knockout'][$key]) && (string) ($tournament['knockout'][$key]['id'] ?? '') === $matchId) {
+                $tournament['knockout'][$key][$scoreKey] = $scoreValue;
+                $updated = true;
+            }
+        }
+    }
+    return $updated;
+}
+
+function patchTournamentMatchScore(string $tournamentId, string $matchId, int $scoreSide, ?int $scoreValue): int
+{
+    $tournamentId = databaseId($tournamentId, 'Tournament id');
+    $matchId = databaseId($matchId, 'Match id');
+    if ($scoreSide !== 1 && $scoreSide !== 2) {
+        fail('Score side must be 1 or 2.', 400);
+    }
+    $scoreColumn = $scoreSide === 1 ? 'score1' : 'score2';
+    $scoreKey = $scoreColumn;
+    $pdo = db();
+
+    try {
+        $pdo->beginTransaction();
+        $statement = $pdo->prepare('SELECT data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
+        $statement->execute([$tournamentId]);
+        $dataJson = $statement->fetchColumn();
+        if (!is_string($dataJson) || $dataJson === '') {
+            $pdo->rollBack();
+            fail('Tournament not found.', 404);
+        }
+
+        $tournament = decodeStoredArray($dataJson);
+        if (!is_array($tournament)) {
+            $pdo->rollBack();
+            fail('Stored tournament data is invalid.', 500);
+        }
+
+        $rowExists = $pdo->prepare('SELECT 1 FROM bt_tournament_matches WHERE tournament_id = ? AND match_id = ? LIMIT 1');
+        $rowExists->execute([$tournamentId, $matchId]);
+        $hasMatchRow = (bool) $rowExists->fetchColumn();
+
+        $tournament = fillMissingTournamentScoresFromStoredRows($tournament, $tournamentId);
+        $matchedTournamentJson = applyScorePatchToTournament($tournament, $matchId, $scoreKey, $scoreValue);
+        if (!$matchedTournamentJson && !$hasMatchRow) {
+            $pdo->rollBack();
+            fail('Match not found.', 404);
+        }
+
+        if ($matchedTournamentJson) {
+            syncTournamentMatchRows($tournamentId, $tournament);
+        }
+
+        $updateScore = $pdo->prepare("UPDATE bt_tournament_matches SET $scoreColumn = ?, version = version + 1, updated_at = ? WHERE tournament_id = ? AND match_id = ?");
+        $updateScore->execute([$scoreValue, nowIso(), $tournamentId, $matchId]);
+
+        if ($matchedTournamentJson) {
+            $dataJson = jsonEncodeValue($tournament);
+            $updateTournament = $pdo->prepare('
+                UPDATE bt_tournaments
+                SET data_json = ?, data_hash = ?, version = version + 1, updated_at = ?
+                WHERE tournament_id = ?
+            ');
+            $updateTournament->execute([$dataJson, hash('sha256', $dataJson), nowIso(), $tournamentId]);
+        }
+
+        $version = $pdo->prepare('SELECT version FROM bt_tournaments WHERE tournament_id = ?');
+        $version->execute([$tournamentId]);
+        $newVersion = (int) $version->fetchColumn();
+        $pdo->commit();
+        return $newVersion;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        fail('Cannot patch match score: ' . $error->getMessage(), 500);
+    }
+}
+
+function syncTournamentMatchScoreBatch(string $tournamentId, array $scores): int
+{
+    $tournamentId = databaseId($tournamentId, 'Tournament id');
+    $pdo = db();
+
+    try {
+        $pdo->beginTransaction();
+        $statement = $pdo->prepare('SELECT data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
+        $statement->execute([$tournamentId]);
+        $dataJson = $statement->fetchColumn();
+        if (!is_string($dataJson) || $dataJson === '') {
+            $pdo->rollBack();
+            fail('Tournament not found.', 404);
+        }
+
+        $tournament = decodeStoredArray($dataJson);
+        if (!is_array($tournament)) {
+            $pdo->rollBack();
+            fail('Stored tournament data is invalid.', 500);
+        }
+
+        $now = nowIso();
+        $update = $pdo->prepare('
+            UPDATE bt_tournament_matches
+            SET
+                score1 = COALESCE(?, score1),
+                score2 = COALESCE(?, score2),
+                version = version + 1,
+                updated_at = ?
+            WHERE tournament_id = ? AND match_id = ?
+        ');
+
+        $updated = 0;
+        foreach ($scores as $score) {
+            if (!is_array($score)) {
+                continue;
+            }
+            $matchId = trim((string) ($score['match_id'] ?? $score['id'] ?? ''));
+            if ($matchId === '' || strlen($matchId) > 191) {
+                continue;
+            }
+            $score1 = nullableScore($score['score1'] ?? null);
+            $score2 = nullableScore($score['score2'] ?? null);
+            if ($score1 === null && $score2 === null) {
+                continue;
+            }
+
+            $update->execute([$score1, $score2, $now, $tournamentId, $matchId]);
+            if ($update->rowCount() > 0) {
+                $updated++;
+                if ($score1 !== null) {
+                    applyScorePatchToTournament($tournament, $matchId, 'score1', $score1);
+                }
+                if ($score2 !== null) {
+                    applyScorePatchToTournament($tournament, $matchId, 'score2', $score2);
+                }
+            }
+        }
+
+        if ($updated > 0) {
+            $dataJson = jsonEncodeValue($tournament);
+            $updateTournament = $pdo->prepare('
+                UPDATE bt_tournaments
+                SET data_json = ?, data_hash = ?, version = version + 1, updated_at = ?
+                WHERE tournament_id = ?
+            ');
+            $updateTournament->execute([$dataJson, hash('sha256', $dataJson), $now, $tournamentId]);
+        }
+
+        $version = $pdo->prepare('SELECT version FROM bt_tournaments WHERE tournament_id = ?');
+        $version->execute([$tournamentId]);
+        $newVersion = (int) $version->fetchColumn();
+        $pdo->commit();
+        return $newVersion;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        fail('Cannot sync match scores: ' . $error->getMessage(), 500);
+    }
+}
+
+function migrateLegacyAppState(): void
+{
+    static $ran = false;
+    if ($ran) {
+        return;
+    }
+    $ran = true;
+
+    $pdo = db();
+    $statement = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
+    foreach ($statement->fetchAll() as $row) {
+        $key = (string) $row['storage_key'];
+        $value = (string) $row['storage_value'];
+        if (startsWith($key, TOURNAMENT_KEY_PREFIX)) {
+            $tournament = decodeStoredArray($value);
+            $tournamentId = trim((string) ($tournament['id'] ?? substr($key, strlen(TOURNAMENT_KEY_PREFIX))));
+            if (is_array($tournament) && $tournamentId !== '' && strlen($tournamentId) <= 191 && !tournamentExists($tournamentId)) {
+                $tournament['id'] = $tournamentId;
+                upsertTournamentRecord($tournament, false);
+            }
+            continue;
+        }
+        if (startsWith($key, PLAYER_LIST_KEY_PREFIX)) {
+            $list = decodeStoredArray($value);
+            $listId = trim(substr($key, strlen(PLAYER_LIST_KEY_PREFIX)));
+            if (is_array($list) && $listId !== '' && strlen($listId) <= 191 && !playerListExists('', $listId)) {
+                upsertPlayerListRecord('', $key, $list, false);
+            }
+            continue;
+        }
+        $insert = $pdo->prepare('
+            INSERT IGNORE INTO bt_app_settings (owner_username, storage_key, storage_value, updated_at)
+            VALUES (?, ?, ?, ?)
+        ');
+        $insert->execute(['', $key, $value, nowIso()]);
+    }
+}
+
+function exportApplicationState(array $default, ?string $username = null): array
+{
+    $pdo = db();
+    $ownerUsername = $username === null ? null : ownerUsername($username);
+    $state = [];
+
+    $legacy = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
+    foreach ($legacy->fetchAll() as $row) {
+        $state[(string) $row['storage_key']] = (string) $row['storage_value'];
+    }
+
+    if ($ownerUsername === null) {
+        $settings = $pdo->query('SELECT storage_key, storage_value FROM bt_app_settings ORDER BY owner_username ASC');
+        $settingRows = $settings->fetchAll();
+    } else {
+        $settings = $pdo->prepare('
+            SELECT storage_key, storage_value, owner_username
+            FROM bt_app_settings
+            WHERE owner_username = "" OR owner_username = ?
+            ORDER BY owner_username ASC
+        ');
+        $settings->execute([$ownerUsername]);
+        $settingRows = $settings->fetchAll();
+    }
+    foreach ($settingRows as $row) {
+        $state[(string) $row['storage_key']] = (string) $row['storage_value'];
+    }
+
+    $tournamentIndex = [];
+    $tournaments = $pdo->query('
+        SELECT tournament_id, name, scheduled_date, data_json, version, created_at, updated_at
+        FROM bt_tournaments
+        ORDER BY updated_at DESC
+    ');
+    foreach ($tournaments->fetchAll() as $row) {
+        $tournamentId = (string) $row['tournament_id'];
+        $tournament = decodeStoredArray((string) $row['data_json']);
+        if (!is_array($tournament)) {
+            continue;
+        }
+        $tournament['id'] = (string) ($tournament['id'] ?? $tournamentId);
+        $tournament = overlayStoredMatchScores($tournament, $tournamentId);
+        $state[TOURNAMENT_KEY_PREFIX . $tournamentId] = jsonEncodeValue($tournament);
+        $tournamentIndex[] = [
+            'id' => $tournamentId,
+            'name' => (string) ($tournament['name'] ?? $row['name']),
+            'scheduledDate' => (string) ($tournament['scheduledDate'] ?? $row['scheduled_date']),
+            'createdAt' => jsMillisecondsFromIso((string) $row['created_at']),
+            'updatedAt' => jsMillisecondsFromIso((string) $row['updated_at']),
+            'version' => (int) $row['version'],
+        ];
+    }
+    $state[TOURNAMENTS_INDEX_KEY] = jsonEncodeValue($tournamentIndex);
+
+    $playerListsById = [];
+    if ($ownerUsername === null) {
+        $playerLists = $pdo->query('
+            SELECT owner_username, list_id, name, data_json
+            FROM bt_player_lists
+            ORDER BY owner_username ASC, name ASC, list_id ASC
+        ');
+        $playerListRows = $playerLists->fetchAll();
+    } else {
+        $playerLists = $pdo->prepare('
+            SELECT owner_username, list_id, name, data_json
+            FROM bt_player_lists
+            WHERE owner_username = "" OR owner_username = ?
+            ORDER BY owner_username ASC, name ASC, list_id ASC
+        ');
+        $playerLists->execute([$ownerUsername]);
+        $playerListRows = $playerLists->fetchAll();
+    }
+    foreach ($playerListRows as $row) {
+        $listId = (string) $row['list_id'];
+        if ($listId === '') {
+            continue;
+        }
+        $playerListsById[$listId] = [
+            'name' => (string) $row['name'],
+            'data_json' => (string) $row['data_json'],
+        ];
+    }
+    uasort($playerListsById, function (array $a, array $b): int {
+        return strcasecmp($a['name'], $b['name']);
+    });
+
+    $playerListIndex = [];
+    foreach ($playerListsById as $listId => $row) {
+        $state[PLAYER_LIST_KEY_PREFIX . $listId] = $row['data_json'];
+        $playerListIndex[] = (string) $listId;
+    }
+    $state[PLAYER_LISTS_INDEX_KEY] = jsonEncodeValue($playerListIndex);
+
+    return $state ?: $default;
+}
+
 function readStore(string $name, array $default): array
 {
     try {
@@ -195,12 +1079,7 @@ function readStoreFromDatabase(string $name, array $default): array
     }
 
     if ($name === 'app-state') {
-        $state = [];
-        $statement = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
-        foreach ($statement->fetchAll() as $row) {
-            $state[(string) $row['storage_key']] = (string) $row['storage_value'];
-        }
-        return $state ?: $default;
+        return exportApplicationState($default);
     }
 
     return $default;
@@ -263,16 +1142,31 @@ function replaceStoreInDatabase(string $name, array $value): void
 
     if ($name === 'app-state') {
         $pdo->exec('DELETE FROM bt_app_state');
-        $statement = $pdo->prepare('
-            INSERT INTO bt_app_state (storage_key, storage_value, updated_at)
-            VALUES (?, ?, ?)
-        ');
+        $pdo->exec('DELETE FROM bt_tournament_matches');
+        $pdo->exec('DELETE FROM bt_tournaments');
+        $pdo->exec('DELETE FROM bt_player_lists');
+        $pdo->exec('DELETE FROM bt_app_settings');
         foreach ($value as $key => $storageValue) {
             $key = trim((string) $key);
             if ($key === '') {
                 continue;
             }
-            $statement->execute([$key, (string) $storageValue, $now]);
+            if (startsWith($key, TOURNAMENT_KEY_PREFIX)) {
+                $tournament = decodeStoredArray((string) $storageValue);
+                if (is_array($tournament)) {
+                    $tournament['id'] = (string) ($tournament['id'] ?? substr($key, strlen(TOURNAMENT_KEY_PREFIX)));
+                    upsertTournamentRecord($tournament, false);
+                }
+                continue;
+            }
+            if (startsWith($key, PLAYER_LIST_KEY_PREFIX)) {
+                $list = decodeStoredArray((string) $storageValue);
+                if (is_array($list)) {
+                    upsertPlayerListRecord('', $key, $list, false);
+                }
+                continue;
+            }
+            upsertAppSetting('', $key, (string) $storageValue);
         }
     }
 }
@@ -306,15 +1200,7 @@ function requireUser($rawToken, bool $adminOnly = false): array
         fail('Invalid or expired session.', 401);
     }
 
-    $session = mutateStore('sessions', [], function (array &$sessions) use ($token) {
-        $now = time();
-        foreach ($sessions as $key => $candidate) {
-            if (!is_array($candidate) || (int) ($candidate['expires_at'] ?? 0) <= $now) {
-                unset($sessions[$key]);
-            }
-        }
-        return isset($sessions[$token]) && is_array($sessions[$token]) ? $sessions[$token] : null;
-    });
+    $session = findSessionByToken($token);
     if (!is_array($session)) {
         fail('Invalid or expired session.', 401);
     }
@@ -340,32 +1226,55 @@ function validateNewPassword(string $password): void
 
 function deleteSessionsForUser(string $username): void
 {
-    mutateStore('sessions', [], function (array &$sessions) use ($username) {
-        foreach ($sessions as $token => $session) {
-            if (($session['username'] ?? null) === $username) {
-                unset($sessions[$token]);
-            }
-        }
-    });
+    $statement = db()->prepare('DELETE FROM bt_sessions WHERE username = ?');
+    $statement->execute([$username]);
 }
+
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$action = trim((string) ($_GET['action'] ?? ''));
 
 if (version_compare(PHP_VERSION, MINIMUM_PHP_VERSION, '<')) {
     fail('PHP ' . MINIMUM_PHP_VERSION . '+ is required. Configure the hosting account for PHP ' . TARGET_PHP_VERSION . '.', 500);
 }
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+if ($method === 'GET' && $action === 'ping') {
+    initializeDatabase();
+    respond([
+        'ok' => true,
+        'api' => 'Badminton Tournament Manager',
+        'phpVersion' => PHP_VERSION,
+        'databaseConnected' => true,
+        'tables' => [
+            'bt_users' => btTableExists(db(), 'bt_users'),
+            'bt_sessions' => btTableExists(db(), 'bt_sessions'),
+            'bt_app_state' => btTableExists(db(), 'bt_app_state'),
+            'bt_tournaments' => btTableExists(db(), 'bt_tournaments'),
+            'bt_tournament_matches' => btTableExists(db(), 'bt_tournament_matches'),
+            'bt_player_lists' => btTableExists(db(), 'bt_player_lists'),
+            'bt_app_settings' => btTableExists(db(), 'bt_app_settings'),
+        ],
+        'rowCounts' => [
+            'bt_users' => (int) db()->query('SELECT COUNT(*) FROM bt_users')->fetchColumn(),
+            'bt_tournaments' => (int) db()->query('SELECT COUNT(*) FROM bt_tournaments')->fetchColumn(),
+            'bt_tournament_matches' => (int) db()->query('SELECT COUNT(*) FROM bt_tournament_matches')->fetchColumn(),
+            'bt_player_lists' => (int) db()->query('SELECT COUNT(*) FROM bt_player_lists')->fetchColumn(),
+            'bt_app_settings' => (int) db()->query('SELECT COUNT(*) FROM bt_app_settings')->fetchColumn(),
+        ],
+    ]);
+}
+
+if ($method === 'OPTIONS') {
     http_response_code(204);
     exit;
 }
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+if ($method !== 'POST') {
     fail('POST requests only.', 405);
 }
 
 initializeDatabase();
 
 $payload = requestPayload();
-$action = trim((string) ($_GET['action'] ?? ''));
 
 switch ($action) {
     case 'login_user':
@@ -378,43 +1287,26 @@ switch ($action) {
         }
         $token = bin2hex(random_bytes(32));
         $expiresAt = time() + SESSION_IDLE_SECONDS;
-        mutateStore('sessions', [], function (array &$sessions) use ($username, $token, $expiresAt) {
-            $now = time();
-            foreach ($sessions as $key => $session) {
-                if ((int) ($session['expires_at'] ?? 0) <= $now) {
-                    unset($sessions[$key]);
-                }
-            }
-            $active = count(array_filter($sessions, function ($session) use ($username): bool {
-                return is_array($session) && ($session['username'] ?? null) === $username;
-            }));
-            if ($active >= MAX_ACTIVE_SESSIONS) {
-                fail('Login session limit exceeded.', 409);
-            }
-            $sessions[$token] = ['username' => $username, 'expires_at' => $expiresAt, 'created_at' => nowIso()];
-        });
+        if (countActiveSessionsForUser($username) >= MAX_ACTIVE_SESSIONS) {
+            fail('Login session limit exceeded.', 409);
+        }
+        createSessionRow($token, $username, $expiresAt);
         respond(sessionResponse($user, $token, $expiresAt));
 
     case 'logout_user':
         $token = trim((string) ($payload['auth_token'] ?? ''));
-        mutateStore('sessions', [], function (array &$sessions) use ($token) {
-            unset($sessions[$token]);
-        });
+        deleteSessionToken($token);
         respond(['ok' => true]);
 
     case 'refresh_session':
         list($user, $token) = requireUser($payload['auth_token'] ?? '');
         $expiresAt = time() + SESSION_IDLE_SECONDS;
-        mutateStore('sessions', [], function (array &$sessions) use ($token, $expiresAt) {
-            if (isset($sessions[$token])) {
-                $sessions[$token]['expires_at'] = $expiresAt;
-            }
-        });
+        updateSessionExpiry($token, $expiresAt);
         respond(['expiresAt' => gmdate(DATE_ATOM, $expiresAt)]);
 
     case 'export_app_state':
-        requireUser($payload['auth_token'] ?? '');
-        respond(readStore('app-state', []));
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        respond(exportApplicationState([], (string) $user['username']));
 
     case 'save_tournament':
         requireUser($payload['auth_token'] ?? '');
@@ -422,58 +1314,68 @@ switch ($action) {
         if (!is_array($tournament) || trim((string) ($tournament['id'] ?? '')) === '') {
             fail('A tournament payload with an id is required.', 400);
         }
-        $key = 'bt_tournament_v1_' . (string) $tournament['id'];
-        mutateStore('app-state', [], function (array &$state) use ($key, $tournament) {
-            $state[$key] = jsonEncodeValue($tournament);
-        });
-        respond(['ok' => true]);
+        $version = upsertTournamentRecord($tournament);
+        $matches = tournamentMatches($tournament);
+        respond([
+            'ok' => true,
+            'version' => $version,
+            'receivedMatches' => count($matches),
+            'receivedScoredMatches' => countScoredMatches($matches),
+        ]);
+
+    case 'patch_match_score':
+        requireUser($payload['auth_token'] ?? '');
+        $version = patchTournamentMatchScore(
+            (string) ($payload['tournament_id'] ?? ''),
+            (string) ($payload['match_id'] ?? ''),
+            (int) ($payload['score_side'] ?? 0),
+            requestScore($payload['score_value'] ?? null)
+        );
+        respond(['ok' => true, 'version' => $version]);
+
+    case 'save_match_scores':
+        requireUser($payload['auth_token'] ?? '');
+        $scores = $payload['scores'] ?? null;
+        if (!is_array($scores)) {
+            fail('A score list is required.', 400);
+        }
+        $version = syncTournamentMatchScoreBatch((string) ($payload['tournament_id'] ?? ''), $scores);
+        respond(['ok' => true, 'version' => $version, 'updated' => count($scores)]);
 
     case 'delete_tournament':
         requireUser($payload['auth_token'] ?? '');
-        $key = 'bt_tournament_v1_' . trim((string) ($payload['tournament_id'] ?? ''));
-        mutateStore('app-state', [], function (array &$state) use ($key) {
-            unset($state[$key]);
-        });
+        deleteTournamentRecord(trim((string) ($payload['tournament_id'] ?? '')));
         respond(['ok' => true]);
 
     case 'save_player_list':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $key = trim((string) ($payload['storage_key'] ?? ''));
         $value = $payload['payload'] ?? null;
         if (!startsWith($key, 'bt_playerlist_v1_') || !is_array($value)) {
             fail('A valid player list is required.', 400);
         }
-        mutateStore('app-state', [], function (array &$state) use ($key, $value) {
-            $state[$key] = jsonEncodeValue($value);
-        });
-        respond(['ok' => true]);
+        $version = upsertPlayerListRecord((string) $user['username'], $key, $value);
+        respond(['ok' => true, 'version' => $version]);
 
     case 'delete_player_list':
-        requireUser($payload['auth_token'] ?? '');
-        $key = 'bt_playerlist_v1_' . trim((string) ($payload['player_list_id'] ?? ''));
-        mutateStore('app-state', [], function (array &$state) use ($key) {
-            unset($state[$key]);
-        });
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        deletePlayerListRecord((string) $user['username'], trim((string) ($payload['player_list_id'] ?? '')));
         respond(['ok' => true]);
 
     case 'save_app_setting':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $key = trim((string) ($payload['storage_key'] ?? ''));
         if (!startsWith($key, 'bt_')) {
             fail('Invalid application storage key.', 400);
         }
         $value = (string) ($payload['storage_value'] ?? '');
-        mutateStore('app-state', [], function (array &$state) use ($key, $value) {
-            $state[$key] = $value;
-        });
+        upsertAppSetting((string) $user['username'], $key, $value);
         respond(['ok' => true]);
 
     case 'delete_app_setting':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $key = trim((string) ($payload['storage_key'] ?? ''));
-        mutateStore('app-state', [], function (array &$state) use ($key) {
-            unset($state[$key]);
-        });
+        deleteAppSetting((string) $user['username'], $key);
         respond(['ok' => true]);
 
     case 'list_users':
@@ -531,13 +1433,7 @@ switch ($action) {
             $users[$username]['must_reset_password'] = false;
             $users[$username]['updated_at'] = nowIso();
         });
-        mutateStore('sessions', [], function (array &$sessions) use ($username, $token) {
-            foreach ($sessions as $key => $session) {
-                if (($session['username'] ?? null) === $username && $key !== $token) {
-                    unset($sessions[$key]);
-                }
-            }
-        });
+        deleteOtherSessionsForUser($username, $token);
         respond(['ok' => true]);
 
     case 'reset_user_password':

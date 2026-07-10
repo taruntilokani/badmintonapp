@@ -16,6 +16,10 @@ $pdoMysqlLoaded = extension_loaded('pdo_mysql');
 $databaseConnected = false;
 $schemaReady = false;
 $usersCount = null;
+$tournamentsCount = null;
+$matchesCount = null;
+$playerListsCount = null;
+$settingsCount = null;
 $dbName = '';
 $dbHost = '';
 $dbUser = '';
@@ -32,9 +36,17 @@ try {
     btCreateSchema($pdo);
     $schemaReady = btTableExists($pdo, 'bt_users')
         && btTableExists($pdo, 'bt_sessions')
-        && btTableExists($pdo, 'bt_app_state');
+        && btTableExists($pdo, 'bt_app_state')
+        && btTableExists($pdo, 'bt_tournaments')
+        && btTableExists($pdo, 'bt_tournament_matches')
+        && btTableExists($pdo, 'bt_player_lists')
+        && btTableExists($pdo, 'bt_app_settings');
     if ($schemaReady) {
         $usersCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_users')->fetchColumn();
+        $tournamentsCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_tournaments')->fetchColumn();
+        $matchesCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_tournament_matches')->fetchColumn();
+        $playerListsCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_player_lists')->fetchColumn();
+        $settingsCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_app_settings')->fetchColumn();
     }
 } catch (Throwable $error) {
     $errorMessage = $error->getMessage();
@@ -97,6 +109,10 @@ function e(string $value): string
     <tr><th>Database connected</th><td><?= yesNo($databaseConnected) ?></td></tr>
     <tr><th>Database tables ready</th><td><?= yesNo($schemaReady) ?></td></tr>
     <tr><th>User rows</th><td><?= $usersCount === null ? '-' : e((string) $usersCount) ?></td></tr>
+    <tr><th>Tournament rows</th><td><?= $tournamentsCount === null ? '-' : e((string) $tournamentsCount) ?></td></tr>
+    <tr><th>Match score rows</th><td><?= $matchesCount === null ? '-' : e((string) $matchesCount) ?></td></tr>
+    <tr><th>Player list rows</th><td><?= $playerListsCount === null ? '-' : e((string) $playerListsCount) ?></td></tr>
+    <tr><th>Settings rows</th><td><?= $settingsCount === null ? '-' : e((string) $settingsCount) ?></td></tr>
   </table>
   <?php if (!$allGood): ?>
     <div class="warning">

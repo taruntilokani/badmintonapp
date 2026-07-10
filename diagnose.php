@@ -33,10 +33,14 @@ try {
     echo "Database connection: PASS\n";
     btCreateSchema($pdo);
     echo "Schema creation/check: PASS\n";
-    foreach (['bt_users', 'bt_sessions', 'bt_app_state'] as $table) {
+    foreach (['bt_users', 'bt_sessions', 'bt_app_state', 'bt_tournaments', 'bt_tournament_matches', 'bt_player_lists', 'bt_app_settings'] as $table) {
         echo $table . " table exists: " . (btTableExists($pdo, $table) ? 'YES' : 'NO') . "\n";
     }
     echo "User rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_users')->fetchColumn() . "\n\n";
+    echo "Tournament rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_tournaments')->fetchColumn() . "\n";
+    echo "Match score rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_tournament_matches')->fetchColumn() . "\n";
+    echo "Player list rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_player_lists')->fetchColumn() . "\n";
+    echo "Settings rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_app_settings')->fetchColumn() . "\n\n";
     echo "RESULT: MySQL is ready. Open index.php and log in with admin/admin, then change the password.\n";
 } catch (Throwable $error) {
     echo "Database connection/schema: FAIL\n";

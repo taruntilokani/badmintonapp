@@ -33,7 +33,26 @@ The app creates these tables automatically when `health.php`, `diagnose.php`, or
 bt_users
 bt_sessions
 bt_app_state
+bt_tournaments
+bt_tournament_matches
+bt_player_lists
+bt_app_settings
 ```
+
+`bt_app_state` is kept only for automatic migration from older uploads. New writes use separate indexed tables for faster retrieval and safer multi-session updates:
+
+- `bt_tournaments`: one row per tournament snapshot.
+- `bt_tournament_matches`: one row per match score, used for fast score updates.
+- `bt_player_lists`: one row per saved player list per account.
+- `bt_app_settings`: small app preferences per account, such as active view, filters, shuttle settings, and indexes.
+
+When multiple sessions are logged in, session refresh/logout writes only touch `bt_sessions`, tournament saves only touch the relevant tournament rows, and score entry uses a small `patch_match_score` API call against the match-score table. The tournament snapshot still exists for compatibility, but exported data overlays the latest match-score rows before loading the app.
+
+Player lists are account-level, not tournament-level. Adding or loading players inside a tournament also updates that account's player draft, so the next new tournament starts with the same roster and saved lists stay available for that same login.
+
+The app uses write-through sync: tournament, player-list, score, and setting changes start a MySQL save immediately. Saves are queued per record so newer edits cannot be overwritten by older in-flight requests, and logout waits for the queue to finish. `health.php`, `diagnose.php`, and `api.php?action=ping` show row counts so you can confirm data is present in MySQL after saving.
+
+When loading a tournament, the API also repairs the exported tournament payload from `bt_tournament_matches` if the tournament snapshot is missing match/schedule rows. This keeps the schedule recoverable from the normalized match table.
 
 ## Files To Upload
 
@@ -109,6 +128,14 @@ Confirm `api.php` is uploaded beside `index.php`. The app expects same-folder AP
 ```text
 api.php?action=login_user
 ```
+
+You can also open this URL directly in the browser:
+
+```text
+https://your-site.example/api.php?action=ping
+```
+
+It should return JSON with `"ok": true`.
 
 ### Tables are missing
 
