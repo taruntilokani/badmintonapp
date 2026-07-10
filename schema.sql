@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS bt_app_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS bt_tournaments (
+  owner_username VARCHAR(40) NOT NULL DEFAULT '',
   tournament_id VARCHAR(191) NOT NULL,
   name VARCHAR(255) NOT NULL,
   scheduled_date VARCHAR(32) NOT NULL DEFAULT '',
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS bt_tournaments (
   created_at VARCHAR(40) NOT NULL,
   updated_at VARCHAR(40) NOT NULL,
   PRIMARY KEY (tournament_id),
+  KEY idx_bt_tournaments_owner_updated (owner_username, updated_at),
   KEY idx_bt_tournaments_scheduled_date (scheduled_date),
   KEY idx_bt_tournaments_updated_at (updated_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

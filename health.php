@@ -15,6 +15,7 @@ $phpSupported = version_compare(PHP_VERSION, MINIMUM_PHP_VERSION, '>=');
 $pdoMysqlLoaded = extension_loaded('pdo_mysql');
 $databaseConnected = false;
 $schemaReady = false;
+$ownershipReady = false;
 $usersCount = null;
 $tournamentsCount = null;
 $matchesCount = null;
@@ -47,6 +48,10 @@ try {
         $matchesCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_tournament_matches')->fetchColumn();
         $playerListsCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_player_lists')->fetchColumn();
         $settingsCount = (int) $pdo->query('SELECT COUNT(*) FROM bt_app_settings')->fetchColumn();
+        $ownershipReady = btColumnExists($pdo, 'bt_tournaments', 'owner_username')
+            && btIndexExists($pdo, 'bt_tournaments', 'idx_bt_tournaments_owner_updated')
+            && btPrimaryKeyColumns($pdo, 'bt_player_lists') === ['owner_username', 'list_id']
+            && btPrimaryKeyColumns($pdo, 'bt_app_settings') === ['owner_username', 'storage_key'];
     }
 } catch (Throwable $error) {
     $errorMessage = $error->getMessage();
@@ -59,7 +64,8 @@ $allGood = $phpSupported
     && $apiExists
     && $databaseHelperExists
     && $databaseConnected
-    && $schemaReady;
+    && $schemaReady
+    && $ownershipReady;
 $status = $allGood ? 'READY' : 'ACTION REQUIRED';
 $statusColor = $allGood ? '#177245' : '#b42318';
 
@@ -108,6 +114,7 @@ function e(string $value): string
     <tr><th>Configured MySQL user</th><td><?= e($dbUser ?: '-') ?></td></tr>
     <tr><th>Database connected</th><td><?= yesNo($databaseConnected) ?></td></tr>
     <tr><th>Database tables ready</th><td><?= yesNo($schemaReady) ?></td></tr>
+    <tr><th>User data isolation ready</th><td><?= yesNo($ownershipReady) ?></td></tr>
     <tr><th>User rows</th><td><?= $usersCount === null ? '-' : e((string) $usersCount) ?></td></tr>
     <tr><th>Tournament rows</th><td><?= $tournamentsCount === null ? '-' : e((string) $tournamentsCount) ?></td></tr>
     <tr><th>Match score rows</th><td><?= $matchesCount === null ? '-' : e((string) $matchesCount) ?></td></tr>

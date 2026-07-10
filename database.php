@@ -103,6 +103,7 @@ function btCreateSchema(PDO $pdo): void
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS bt_tournaments (
+            owner_username VARCHAR(40) NOT NULL DEFAULT '',
             tournament_id VARCHAR(191) NOT NULL,
             name VARCHAR(255) NOT NULL,
             scheduled_date VARCHAR(32) NOT NULL DEFAULT '',
@@ -112,6 +113,7 @@ function btCreateSchema(PDO $pdo): void
             created_at VARCHAR(40) NOT NULL,
             updated_at VARCHAR(40) NOT NULL,
             PRIMARY KEY (tournament_id),
+            KEY idx_bt_tournaments_owner_updated (owner_username, updated_at),
             KEY idx_bt_tournaments_scheduled_date (scheduled_date),
             KEY idx_bt_tournaments_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -150,6 +152,7 @@ function btCreateSchema(PDO $pdo): void
             updated_at VARCHAR(40) NOT NULL,
             PRIMARY KEY (owner_username, list_id),
             KEY idx_bt_player_lists_name (owner_username, name),
+            KEY idx_bt_player_lists_owner_updated (owner_username, updated_at),
             KEY idx_bt_player_lists_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
@@ -161,12 +164,14 @@ function btCreateSchema(PDO $pdo): void
             storage_value LONGTEXT NOT NULL,
             updated_at VARCHAR(40) NOT NULL,
             PRIMARY KEY (owner_username, storage_key),
+            KEY idx_bt_app_settings_owner_updated (owner_username, updated_at),
             KEY idx_bt_app_settings_updated_at (updated_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
     btEnsureOwnedPrimaryKey($pdo, 'bt_player_lists', 'list_id');
     btEnsureOwnedPrimaryKey($pdo, 'bt_app_settings', 'storage_key');
+    btEnsureTournamentOwnership($pdo);
 }
 
 function btTableExists(PDO $pdo, string $table): bool
@@ -237,5 +242,15 @@ function btEnsureOwnedPrimaryKey(PDO $pdo, string $table, string $idColumn): voi
     $ownerIndex = $table === 'bt_player_lists' ? 'idx_bt_player_lists_owner_updated' : 'idx_bt_app_settings_owner_updated';
     if (!btIndexExists($pdo, $table, $ownerIndex)) {
         $pdo->exec("ALTER TABLE `$safeTable` ADD KEY `$ownerIndex` (owner_username, updated_at)");
+    }
+}
+
+function btEnsureTournamentOwnership(PDO $pdo): void
+{
+    if (!btColumnExists($pdo, 'bt_tournaments', 'owner_username')) {
+        $pdo->exec("ALTER TABLE bt_tournaments ADD COLUMN owner_username VARCHAR(40) NOT NULL DEFAULT '' FIRST");
+    }
+    if (!btIndexExists($pdo, 'bt_tournaments', 'idx_bt_tournaments_owner_updated')) {
+        $pdo->exec('ALTER TABLE bt_tournaments ADD KEY idx_bt_tournaments_owner_updated (owner_username, updated_at)');
     }
 }

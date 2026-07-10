@@ -213,6 +213,264 @@ header('Expires: 0');
       border-top: 1px solid var(--border);
     }
 
+    .tournamentSetupGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 780px;
+    }
+
+    .tournamentField {
+      display: grid;
+      grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+      gap: 8px 16px;
+      align-items: center;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .tournamentField label {
+      margin: 0;
+      color: #334155;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: 0;
+      line-height: 1.25;
+      text-transform: none;
+    }
+
+    .tournamentField input,
+    .tournamentField select {
+      width: 100%;
+      max-width: 460px;
+      min-height: 42px;
+      margin-bottom: 0;
+      background: #ffffff;
+    }
+
+    .tournamentField .hint {
+      grid-column: 2;
+      margin: -2px 0 0;
+    }
+
+    .tournamentField-wide {
+      grid-column: auto;
+    }
+
+    .tournamentField-compact {
+      max-width: none;
+    }
+
+    .tournamentField-compact input[type=number] {
+      max-width: 126px;
+    }
+
+    .tournamentField-nested,
+    .tournamentNestedFields {
+      margin-left: 24px;
+      padding-left: 18px;
+      border-left: 3px solid var(--border);
+    }
+
+    .tournamentNestedFields,
+    .tournamentTeamFields {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .tournamentNestedFields .tournamentField {
+      margin-left: 0;
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .tournamentTeamFields:focus {
+      outline: none;
+    }
+
+    .tournamentTeamsPreview {
+      margin-top: 14px;
+      background: #ffffff;
+    }
+
+    #sessionBar {
+      padding: 0;
+      margin-bottom: 10px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .accountBar {
+      display: flex;
+      justify-content: flex-end;
+      width: 100%;
+    }
+
+    .accountPill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      min-width: 0;
+      padding: 7px 8px 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    }
+
+    .accountLabel {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .accountName {
+      max-width: 240px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #sessionLogoutBtn {
+      min-height: 32px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .tournamentFlow {
+      display: grid;
+      gap: 14px;
+    }
+
+    .tournamentChoiceGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .tournamentChoiceCard {
+      min-height: 168px;
+      padding: 18px;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .tournamentChoiceCard:hover:not(:disabled) {
+      border-color: #5eead4;
+      background: #f8fffd;
+    }
+
+    .tournamentChoiceIcon {
+      position: relative;
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ccfbf1, #ffffff);
+      border: 1px solid #99f6e4;
+      box-shadow: inset 0 0 0 6px rgba(20, 184, 166, 0.08);
+    }
+
+    .tournamentChoiceIcon.createIcon::before,
+    .tournamentChoiceIcon.createIcon::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--primary-strong);
+      transform: translate(-50%, -50%);
+    }
+
+    .tournamentChoiceIcon.createIcon::after {
+      width: 4px;
+      height: 24px;
+    }
+
+    .tournamentChoiceIcon.loadIcon::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      right: 11px;
+      bottom: 13px;
+      height: 24px;
+      border-radius: 5px;
+      background: var(--primary-strong);
+      box-shadow: 0 -8px 0 -3px #14b8a6;
+    }
+
+    .tournamentChoiceIcon.loadIcon::after {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 14px;
+      width: 17px;
+      height: 9px;
+      border-radius: 5px 5px 0 0;
+      background: #14b8a6;
+    }
+
+    .tournamentChoiceTitle {
+      display: block;
+      font-size: 18px;
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .tournamentChoiceText {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .tournamentFlowPanel {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-alt);
+    }
+
+    .tournamentFlowHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tournamentFlowHeader h4 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+
+    .tournamentBackBtn {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 7px 10px;
+    }
+
     #createTournamentPanel,
     #loadTournamentPanel {
       align-self: stretch;
@@ -286,6 +544,205 @@ header('Expires: 0');
     #playersList .listItem:hover {
       background: #ffffff;
       transform: translateY(-1px);
+    }
+
+    .playersManager {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.95fr) minmax(320px, 1.15fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .playersControlPanel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .playersControlPanel .workspacePanel {
+      margin-bottom: 0;
+    }
+
+    .playersRosterPanel {
+      min-width: 0;
+    }
+
+    .playersRosterHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .playersRosterHeader h4 {
+      margin: 0;
+    }
+
+    .playersHeaderActions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .playersRosterGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .playerAddRow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 44px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .playerAddRow input {
+      margin-bottom: 0;
+    }
+
+    .bulkPlayersPanel {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .playerCard {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .playerAvatar,
+    .awardPlayerPhoto {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ccfbf1, #f8fafc);
+      color: var(--primary-strong);
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .playerAvatar {
+      width: 54px;
+      height: 54px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px var(--border);
+      font-size: 18px;
+    }
+
+    .playerAvatar img,
+    .awardPlayerPhoto img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .playerCardBody {
+      min-width: 0;
+    }
+
+    .playerDisplayName {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .playerNameInput {
+      display: none;
+      margin-bottom: 0 !important;
+      font-weight: 750;
+    }
+
+    .playerCard.isEditing .playerDisplayName {
+      display: none;
+    }
+
+    .playerCard.isEditing .playerNameInput {
+      display: block;
+    }
+
+    .playerCardActions {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .playerIconBtn,
+    .photoUploadBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      min-width: 36px;
+      height: 36px;
+      min-height: 36px;
+      padding: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface-alt);
+      color: var(--primary-strong);
+      cursor: pointer;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0;
+      box-shadow: none;
+      line-height: 1;
+    }
+
+    .playerIconBtn:hover:not(:disabled),
+    .photoUploadBtn:hover {
+      background: #ecfeff;
+      border-color: #5eead4;
+    }
+
+    .playerIconBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .addPlayerIconBtn {
+      width: 44px;
+      min-width: 44px;
+      height: 42px;
+      min-height: 42px;
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      font-size: 24px;
+    }
+
+    .toggleBulkPlayersBtn[aria-expanded="true"] {
+      background: #ecfeff;
+      border-color: #5eead4;
+      color: var(--primary-strong);
+    }
+
+    .playerRemoveBtn {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #ffffff;
+    }
+
+    .photoUploadInput {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .historyCalendar {
@@ -417,6 +874,71 @@ header('Expires: 0');
       #tournamentSetupPanel {
         padding: 11px;
       }
+
+      .accountBar {
+        justify-content: stretch;
+      }
+
+      .accountPill {
+        width: 100%;
+        border-radius: 10px;
+      }
+
+      .accountName {
+        max-width: none;
+        flex: 1;
+      }
+
+      .tournamentChoiceGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .tournamentSetupGrid,
+      .tournamentTeamFields {
+        grid-template-columns: 1fr;
+      }
+
+      .tournamentField {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .tournamentField .hint {
+        grid-column: 1;
+      }
+
+      .tournamentField-wide,
+      .tournamentTeamFields {
+        grid-column: 1;
+      }
+
+      .tournamentField input,
+      .tournamentField select {
+        max-width: none;
+      }
+
+      .tournamentField-nested,
+      .tournamentNestedFields {
+        margin-left: 0;
+        padding-left: 12px;
+      }
+
+      .tournamentField-compact {
+        max-width: none;
+      }
+
+      .tournamentChoiceCard {
+        min-height: 132px;
+      }
+
+      .tournamentFlowHeader {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .tournamentBackBtn {
+        width: 100%;
+      }
     }
 
     .row {
@@ -485,6 +1007,27 @@ header('Expires: 0');
     input[type=number]::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
+    }
+
+    #teamsCount,
+    #groupsCount,
+    #teamsPerGroup {
+      width: 126px !important;
+      min-width: 96px;
+      max-width: 126px;
+      appearance: auto;
+      -moz-appearance: auto;
+      text-align: center;
+    }
+
+    #teamsCount::-webkit-outer-spin-button,
+    #teamsCount::-webkit-inner-spin-button,
+    #groupsCount::-webkit-outer-spin-button,
+    #groupsCount::-webkit-inner-spin-button,
+    #teamsPerGroup::-webkit-outer-spin-button,
+    #teamsPerGroup::-webkit-inner-spin-button {
+      -webkit-appearance: auto;
+      opacity: 1;
     }
 
     input[type=text]:focus,
@@ -789,15 +1332,20 @@ header('Expires: 0');
       font: inherit;
       font-weight: 700;
       min-height: 0;
-      padding: 0;
-      text-align: left;
+      padding: 5px 6px;
+      text-align: center;
       text-decoration: none;
     }
 
+    .leaderboardPlayerLink .teamPlayerTile {
+      max-width: 96px;
+      margin: 0 auto;
+    }
+
     .leaderboardPlayerLink:hover {
-      background: transparent;
+      background: var(--primary-soft);
       box-shadow: none;
-      text-decoration: underline;
+      text-decoration: none;
     }
 
     .leaderboardPlayerLink:focus,
@@ -847,7 +1395,7 @@ header('Expires: 0');
 
     .playerStatsHero {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) minmax(180px, 260px);
+      grid-template-columns: minmax(88px, auto) minmax(0, 1fr) minmax(180px, 260px);
       gap: 16px;
       align-items: center;
       padding: 18px;
@@ -856,6 +1404,24 @@ header('Expires: 0');
       background: linear-gradient(135deg, var(--primary-strong), var(--primary));
       box-shadow: 0 12px 26px rgba(15, 118, 110, 0.18);
       overflow: hidden;
+    }
+
+    .playerStatsHeroPlayer {
+      max-width: 118px;
+    }
+
+    .playerStatsHeroPlayer .teamPlayerAvatar {
+      width: 72px;
+      height: 72px;
+      font-size: 22px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 8px 18px rgba(15, 23, 42, 0.2);
+    }
+
+    .playerStatsHeroPlayer .teamPlayerName {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 850;
+      text-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
     }
 
     .playerStatsAvatar {
@@ -979,7 +1545,7 @@ header('Expires: 0');
 
     .playerRelationRow {
       display: grid;
-      grid-template-columns: 26px minmax(0, 1fr) auto;
+      grid-template-columns: 26px minmax(86px, 1fr) auto;
       gap: 8px;
       align-items: center;
       padding: 9px 10px;
@@ -999,6 +1565,11 @@ header('Expires: 0');
       overflow-wrap: anywhere;
       font-size: 13px;
       font-weight: 700;
+    }
+
+    .playerRelationRow .teamPlayerTile {
+      min-width: 64px;
+      max-width: 104px;
     }
 
     .playerRelationCount {
@@ -1123,9 +1694,14 @@ header('Expires: 0');
 
     .pointsTeamButton {
       appearance: none;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      justify-content: stretch;
+      gap: 8px;
       width: 100%;
       min-height: 0;
-      padding: 4px 7px;
+      padding: 6px 7px;
       border: 0;
       border-radius: 6px;
       background: transparent;
@@ -1137,6 +1713,74 @@ header('Expires: 0');
       text-align: left;
     }
 
+    .teamPhotoDisplay {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      min-width: 0;
+      white-space: normal;
+    }
+
+    .teamPhotoDisplay.alignEnd {
+      justify-content: flex-end;
+      text-align: center;
+    }
+
+    .teamPhotoDisplay.alignCenter {
+      justify-content: center;
+      text-align: center;
+    }
+
+    .teamPhotoDisplay.compact {
+      gap: 6px;
+    }
+
+    .teamPlayerTile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      min-width: 58px;
+      max-width: 86px;
+      text-align: center;
+    }
+
+    .teamPlayerAvatar {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      overflow: hidden;
+      border: 2px solid #ffffff;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ccfbf1, #f8fafc);
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.55);
+      color: var(--primary-strong);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .teamPlayerAvatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .teamPlayerName {
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    .pointsTeamButton .teamPhotoDisplay {
+      padding-right: 0;
+    }
+
     .pointsTeamButton:hover,
     .pointsTeamButton[aria-expanded="true"] {
       background: var(--primary-soft);
@@ -1146,7 +1790,6 @@ header('Expires: 0');
 
     .pointsTeamButton::after {
       content: "\25BE";
-      float: right;
       margin-left: 8px;
       transition: transform 0.15s ease;
     }
@@ -1201,7 +1844,7 @@ header('Expires: 0');
 
     .finalAward {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 14px;
       min-width: 0;
       padding: 14px 16px;
@@ -1263,10 +1906,194 @@ header('Expires: 0');
       color: #92400e;
     }
 
+    .awardPlayers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .awardPlayer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 76px;
+      max-width: 104px;
+      text-align: center;
+    }
+
+    .awardPlayerPhoto {
+      width: 58px;
+      height: 58px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.5);
+      font-size: 18px;
+    }
+
+    .awardPlayerName {
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
     @media (max-width: 600px) {
       .finalAwards {
         grid-template-columns: 1fr;
       }
+
+      .playersManager {
+        grid-template-columns: 1fr;
+      }
+
+      .playerCard {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+
+      .playerAvatar {
+        width: 48px;
+        height: 48px;
+      }
+
+      .playerCardActions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+    }
+
+    body.authLocked {
+      min-height: 100svh;
+      padding: clamp(14px, 3vw, 28px);
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(245, 158, 11, 0.08) 42%, rgba(248, 250, 252, 0) 74%),
+        var(--bg);
+    }
+
+    body.authLocked .skipLink[href="#bottomNav"] {
+      display: none;
+    }
+
+    body.authLocked #authSection {
+      width: min(100%, 1040px);
+      margin: 0 auto;
+      padding: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(320px, 0.96fr);
+      border: 1px solid #c4d8d4;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+    }
+
+    .authBrandPanel {
+      min-height: 620px;
+      padding: clamp(28px, 4vw, 46px);
+      color: #ecfeff;
+      background:
+        linear-gradient(150deg, rgba(15, 94, 89, 0.98), rgba(15, 118, 110, 0.9) 58%, rgba(12, 74, 110, 0.92)),
+        #0f4f4a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .authIllustration {
+      position: relative;
+      z-index: 1;
+    }
+
+    .authEyebrow {
+      color: rgba(236, 254, 255, 0.78);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .authIllustration {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .authBrandImage {
+      display: block;
+      width: min(92%, 430px);
+      height: auto;
+      max-height: 430px;
+      object-fit: contain;
+      filter: drop-shadow(0 20px 24px rgba(0, 0, 0, 0.28));
+    }
+
+    .authFormPanel {
+      min-width: 0;
+      padding: clamp(28px, 4vw, 48px);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .authFormHeader {
+      margin-bottom: 22px;
+    }
+
+    .authFormHeader .authEyebrow {
+      color: var(--primary-strong);
+    }
+
+    .authFormHeader h3 {
+      margin: 7px 0 8px;
+      font-size: clamp(25px, 4vw, 34px);
+      font-weight: 880;
+    }
+
+    .authFormHeader p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    #authSection .authPanel h4 {
+      margin: 0 0 14px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    #authSection label {
+      margin-top: 12px;
+    }
+
+    #authSection input[type=text],
+    #authSection input[type=password] {
+      min-height: 46px;
+      margin-bottom: 12px;
+      background: #f8fafc;
+    }
+
+    #authSection input[type=text]:focus,
+    #authSection input[type=password]:focus {
+      background: #ffffff;
+    }
+
+    #loginBtn,
+    #resetMyPasswordBtn {
+      width: 100%;
+      min-height: 46px;
+      margin-top: 4px;
+      font-size: 14px;
+      font-weight: 800;
     }
 
     body.authLocked > h1,
@@ -1314,10 +2141,10 @@ header('Expires: 0');
       }
 
       body.authLocked {
-        padding-left: 24px;
+        padding: 24px;
       }
 
-      h2,
+      h1,
       .subTitle,
       .section {
         margin-left: auto;
@@ -1367,6 +2194,12 @@ header('Expires: 0');
     @media (max-width: 600px) {
       body {
         padding: 8px 6px 20px;
+      }
+
+      body.authLocked {
+        padding: 10px;
+        align-items: stretch;
+        justify-content: flex-start;
       }
 
       h1 {
@@ -1586,6 +2419,28 @@ header('Expires: 0');
         padding: 7px 6px;
       }
     }
+
+    @media (max-width: 760px) {
+      body.authLocked #authSection {
+        grid-template-columns: 1fr;
+        border-radius: 12px;
+      }
+
+      .authBrandPanel {
+        min-height: 360px;
+        padding: 24px;
+      }
+
+      .authFormPanel {
+        padding: 24px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .authBrandPanel {
+        min-height: 310px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1675,6 +2530,15 @@ header('Expires: 0');
     function isAppKey(key) { return typeof key === 'string' && key.startsWith(APP_KEY_PREFIX); }
     function isTournamentKey(key) { return typeof key === 'string' && key.startsWith(TOURNAMENT_PREFIX); }
     function isPlayerListKey(key) { return typeof key === 'string' && key.startsWith(PLAYER_LIST_PREFIX); }
+
+    function clearLocalAppData() {
+      const keys = [];
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (isAppKey(key)) keys.push(key);
+      }
+      keys.forEach(key => nativeRemoveItem.call(localStorage, key));
+    }
 
     function getSession() {
       try { return JSON.parse(sessionStorage.getItem(sessionKey) || 'null'); }
@@ -1902,6 +2766,7 @@ header('Expires: 0');
         xhr.send(JSON.stringify({ auth_token: token }));
         if (xhr.status >= 200 && xhr.status < 300) {
           const items = JSON.parse(xhr.responseText || '{}') || {};
+          clearLocalAppData();
           Object.keys(items).forEach((key) => {
             if (isAppKey(key)) nativeSetItem.call(localStorage, key, items[key]);
           });
@@ -2148,37 +3013,53 @@ header('Expires: 0');
 
 <h1 id="pageTitle">Badminton Tournament Manager</h1>
 <div class="subTitle">Run tournaments, scoring, standings, finals, and history from one organized workspace.</div>
-<div class="section hidden" id="sessionBar" style="margin-bottom:12px;">
-  <div class="row" style="justify-content: space-between;">
-    <div><b>Signed in:</b> <span id="signedInUser">-</span></div>
-    <button id="sessionLogoutBtn" class="secondary">Logout</button>
+<div class="section hidden" id="sessionBar">
+  <div class="accountBar">
+    <div class="accountPill">
+      <span class="accountLabel">Signed in</span>
+      <span class="accountName" id="signedInUser">-</span>
+      <button id="sessionLogoutBtn" class="secondary" type="button">Logout</button>
+    </div>
   </div>
 </div>
 
 
-<div class="section" id="authSection">
-  <h3 style="margin-top:0">Login</h3>
-
-  <div id="loginPanel">
-    <label for="loginUsername">Username</label>
-    <input id="loginUsername" type="text" autocomplete="username" placeholder="Username" />
-    <label for="loginPassword">Password</label>
-    <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" />
-    <button id="loginBtn">Login</button>
-    <div id="loginStatus" class="authStatus"></div>
+<div class="section" id="authSection" aria-labelledby="authHeading">
+  <div class="authBrandPanel">
+    <div class="authIllustration" aria-hidden="true">
+      <img class="authBrandImage" src="bs-optimized.png" alt="" loading="eager" decoding="async" />
+    </div>
   </div>
 
-  <div id="resetPasswordPanel" class="hidden">
-    <h4 style="margin:0 0 6px">Reset Password</h4>
-    <div class="hint">You must set a new password before using the app.</div>
-    <label for="currentPasswordInput">Current / Temporary Password</label>
-    <input id="currentPasswordInput" type="password" autocomplete="current-password" />
-    <label for="newPasswordInput">New Password</label>
-    <input id="newPasswordInput" type="password" autocomplete="new-password" />
-    <label for="confirmPasswordInput">Confirm New Password</label>
-    <input id="confirmPasswordInput" type="password" autocomplete="new-password" />
-    <button id="resetMyPasswordBtn">Reset Password</button>
-    <div id="resetPasswordStatus" class="authStatus"></div>
+  <div class="authFormPanel">
+    <div class="authFormHeader">
+      <div class="authEyebrow">Welcome back</div>
+      <h3 id="authHeading">Account Access</h3>
+      <p>Sign in to continue managing tournaments and score updates.</p>
+    </div>
+
+    <div id="loginPanel" class="authPanel">
+      <h4>Login</h4>
+      <label for="loginUsername">Username</label>
+      <input id="loginUsername" type="text" autocomplete="username" placeholder="Username" />
+      <label for="loginPassword">Password</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" />
+      <button id="loginBtn">Login</button>
+      <div id="loginStatus" class="authStatus"></div>
+    </div>
+
+    <div id="resetPasswordPanel" class="authPanel hidden">
+      <h4>Reset Password</h4>
+      <div class="hint">You must set a new password before using the app.</div>
+      <label for="currentPasswordInput">Current / Temporary Password</label>
+      <input id="currentPasswordInput" type="password" autocomplete="current-password" />
+      <label for="newPasswordInput">New Password</label>
+      <input id="newPasswordInput" type="password" autocomplete="new-password" />
+      <label for="confirmPasswordInput">Confirm New Password</label>
+      <input id="confirmPasswordInput" type="password" autocomplete="new-password" />
+      <button id="resetMyPasswordBtn">Reset Password</button>
+      <div id="resetPasswordStatus" class="authStatus"></div>
+    </div>
   </div>
 </div>
 <!-- Top tab bar (centered feature navigation) -->
@@ -2186,7 +3067,6 @@ header('Expires: 0');
   <button id="tabTournament" class="bottomNavBtn active" data-view="tournament" role="tab" aria-controls="viewTournament" aria-selected="true">Tournament</button>
   <button id="tabPlayers" class="bottomNavBtn" data-view="players" role="tab" aria-controls="viewPlayers" aria-selected="false">Players</button>
   <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
-  <button id="tabTeams" class="bottomNavBtn" data-view="teams" role="tab" aria-controls="viewTeams" aria-selected="false" disabled>Teams</button>
   <button id="tabSchedule" class="bottomNavBtn" data-view="schedule" role="tab" aria-controls="viewSchedule" aria-selected="false" disabled>Schedule</button>
   <button id="tabPoints" class="bottomNavBtn" data-view="points" role="tab" aria-controls="viewPoints" aria-selected="false" disabled>Points</button>
   <button id="tabUsers" class="bottomNavBtn" data-view="users" role="tab" aria-controls="usersAdminSection" aria-selected="false" disabled>Users</button>
@@ -2204,79 +3084,133 @@ header('Expires: 0');
     <div><h3>Tournament</h3><div class="hint">Create or load a tournament, then configure format and generate the schedule.</div></div>
   </div>
 
-  <div class="row">
-    <div class="col" id="createTournamentPanel">
-      <h4 style="margin:0 0 6px">Create</h4>
+  <div class="tournamentFlow" id="tournamentFlow">
+    <div class="tournamentChoiceGrid" id="tournamentActionChooser" aria-label="Tournament actions">
+      <button id="startCreateTournamentBtn" class="tournamentChoiceCard" type="button">
+        <span class="tournamentChoiceIcon createIcon" aria-hidden="true"></span>
+        <span>
+          <span class="tournamentChoiceTitle">Create Tournament</span>
+          <span class="tournamentChoiceText">Start a new tournament and configure the format, teams, and schedule.</span>
+        </span>
+      </button>
+      <button id="startLoadTournamentBtn" class="tournamentChoiceCard" type="button">
+        <span class="tournamentChoiceIcon loadIcon" aria-hidden="true"></span>
+        <span>
+          <span class="tournamentChoiceTitle">Load Tournament</span>
+          <span class="tournamentChoiceText">Open a saved tournament and continue scoring or editing setup.</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="tournamentFlowPanel hidden" id="createTournamentPanel">
+      <div class="tournamentFlowHeader">
+        <div>
+          <h4>Create Tournament</h4>
+          <div class="hint">Enter a name to enable tournament creation.</div>
+        </div>
+        <button id="tournamentCreateBackBtn" class="secondary tournamentBackBtn" type="button">&#8592; Tournament</button>
+      </div>
       <label for="newTournamentName">Tournament Name</label>
       <input id="newTournamentName" type="text" placeholder="e.g., Summer Smash 2026" />
-      <button id="createTournamentBtn" disabled>Create Tournament</button>
+      <button id="createTournamentBtn" type="button" disabled>Create Tournament</button>
     </div>
-    <div class="col" id="loadTournamentPanel">
-      <h4 style="margin:0 0 6px">Load</h4>
+
+    <div class="tournamentFlowPanel hidden" id="loadTournamentPanel">
+      <div class="tournamentFlowHeader">
+        <div>
+          <h4>Load Tournament</h4>
+          <div class="hint">Choose a saved tournament, then load it.</div>
+        </div>
+        <button id="tournamentLoadBackBtn" class="secondary tournamentBackBtn" type="button">&#8592; Tournament</button>
+      </div>
       <label for="loadTournamentSelect">Saved Tournaments</label>
       <select id="loadTournamentSelect">
         <option value="">-- Select --</option>
       </select>
       <div class="row">
-        <button id="loadTournamentBtn" disabled>Load</button>
-        <button id="deleteTournamentBtn" class="danger" disabled>Delete</button>
+        <button id="loadTournamentBtn" type="button" disabled>Load</button>
+        <button id="deleteTournamentBtn" class="danger" type="button" disabled>Delete</button>
       </div>
     </div>
   </div>
 
   <div id="tournamentSetupPanel" class="hidden">
-  <div class="row" style="justify-content: space-between; margin-top: 10px;">
+  <div class="tournamentFlowHeader">
     <div>
-      <div><b>Current Tournament:</b> <span id="currentTournamentName">-</span></div>
+      <h4>Current Tournament</h4>
+      <div class="hint"><span id="currentTournamentName">-</span></div>
     </div>
-    <div class="row">
-      <button id="closeTournamentBtn" class="secondary">Close Tournament</button>
-      <button id="resetTournamentBtn" class="danger" disabled>Reset Data</button>
+    <div class="row" style="justify-content: flex-end;">
+      <button id="closeTournamentBtn" class="secondary" type="button">&#8592; Tournament</button>
+      <button id="resetTournamentBtn" class="danger" type="button" disabled>Reset Data</button>
     </div>
   </div>
 
-  <label for="tournamentType">Tournament Type</label>
-  <select id="tournamentType" disabled>
-    <option value="">-- Select --</option>
-    <option value="League">League</option>
-    <option value="Groups">Groups</option>
-    <option value="Knockout">Knockout</option>
-  </select>
+  <div class="tournamentSetupGrid">
+    <div class="tournamentField">
+      <label for="tournamentType">Tournament Type</label>
+      <select id="tournamentType" disabled>
+        <option value="">-- Select --</option>
+        <option value="League">&#127942; League</option>
+        <option value="Groups">&#9638; Groups</option>
+        <option value="Knockout">&#9889; Knockout</option>
+      </select>
+    </div>
 
-  <div id="knockoutConfig" class="hidden">
-    <label for="knockoutRoundOf">Round Of</label>
-    <input id="knockoutRoundOf" type="number" min="2" placeholder="e.g., 8" disabled />
-    <div class="hint">If the number is odd, a BOT entry is added automatically to make the knockout round even.</div>
-  </div>
+    <div id="knockoutConfig" class="tournamentField tournamentField-nested hidden">
+      <label for="knockoutRoundOf">Knockout Round Size</label>
+      <input id="knockoutRoundOf" type="number" min="2" placeholder="e.g., 8" disabled />
+      <div class="hint">If the number is odd, a BOT entry is added automatically to make the knockout round even.</div>
+    </div>
 
-  <div id="groupsConfig" class="hidden">
-    <div class="row">
-      <div class="col">
-        <label for="groupsCount">No. of Groups</label>
-        <input id="groupsCount" type="number" min="1" placeholder="e.g., 2" disabled />
+    <div id="groupsConfig" class="tournamentNestedFields hidden">
+      <div class="tournamentField tournamentField-compact">
+        <label for="groupsCount">Number of Groups</label>
+        <input id="groupsCount" type="number" min="1" max="16" step="1" inputmode="numeric" placeholder="2" disabled />
       </div>
-      <div class="col">
+      <div class="tournamentField tournamentField-compact">
         <label for="teamsPerGroup">Teams per Group</label>
-        <input id="teamsPerGroup" type="number" min="2" placeholder="e.g., 4" disabled />
+        <input id="teamsPerGroup" type="number" min="2" max="32" step="1" inputmode="numeric" placeholder="4" disabled />
+      </div>
+    </div>
+
+    <div class="tournamentField tournamentField-wide">
+      <label for="fixtureType">Fixture Options</label>
+      <select id="fixtureType" disabled>
+        <option value="">-- Select --</option>
+        <option value="Single">&#8594; Single Matches (each pair plays once)</option>
+        <option value="HomeAway">&#8644; Home &amp; Away Matches (each pair plays twice)</option>
+      </select>
+    </div>
+
+    <div class="tournamentField">
+      <label for="playoffFormat">Playoff Format</label>
+      <select id="playoffFormat" disabled>
+        <option value="Semifinals">&#9670; Semifinals</option>
+        <option value="Qualifiers">&#9873; Qualifiers</option>
+        <option value="Final">&#127942; Final (top 2 direct)</option>
+      </select>
+    </div>
+
+    <div class="tournamentTeamFields" id="tournamentTeamsSetupPanel" tabindex="-1">
+      <div class="tournamentField">
+        <label for="matchType">Match Type</label>
+        <select id="matchType" disabled>
+          <option value="">-- Select --</option>
+          <option value="Singles">&#128100; Singles</option>
+          <option value="Doubles">&#128101; Double</option>
+        </select>
+      </div>
+      <div class="tournamentField tournamentField-compact">
+        <label for="teamsCount">Number of Teams</label>
+        <input id="teamsCount" type="number" min="2" max="64" step="1" inputmode="numeric" placeholder="4" disabled />
       </div>
     </div>
   </div>
 
-  <label for="fixtureType">Fixture Options</label>
-  <select id="fixtureType" disabled>
-    <option value="">-- Select --</option>
-    <option value="Single">Single Matches (each pair plays once)</option>
-    <option value="HomeAway">Home & Away Matches (each pair plays twice)</option>
-  </select>
-
-  <label for="playoffFormat">Playoff Format</label>
-  <select id="playoffFormat" disabled>
-    <option value="Semifinals">Semifinals</option>
-    <option value="Qualifiers">Qualifiers</option>
-    <option value="Final">Final (top 2 direct)</option>
-  </select>
-
-  <div class="row" style="justify-content: space-between; margin-top: 10px;">
+  <div class="dataSurface tournamentTeamsPreview" id="teamsPreview"></div>
+  <div class="row workspaceActionBar" style="justify-content: flex-end;">
+    <button id="buildTeamsBtn" class="secondary" disabled>Build Teams</button>
     <button id="generateScheduleBtn" disabled>Generate Schedule</button>
   </div>
   </div>
@@ -2318,39 +3252,66 @@ header('Expires: 0');
     <div><h3>Players</h3><div class="hint">Manage reusable player lists and apply them to the active tournament.</div></div>
   </div>
 
-  <div class="row workspacePanel">
-    <div class="col">
-      <label for="playerListSelect">Load Player List</label>
-      <select id="playerListSelect">
-        <option value="">-- Select --</option>
-      </select>
-    </div>
-    <div class="col">
-      <label>&nbsp;</label>
-      <div class="row">
-        <button id="loadPlayerListBtn" disabled class="secondary">Load Players</button>
-        <button id="savePlayerListBtn" disabled>Save Player List</button>
+  <div class="playersManager">
+    <div class="playersControlPanel">
+      <div class="workspacePanel">
+        <div class="playerStatsSectionHeader">
+          <h4>Player Lists</h4>
+          <span class="pill">Account</span>
+        </div>
+        <label for="playerListSelect">Saved Player List</label>
+        <select id="playerListSelect">
+          <option value="">-- Select --</option>
+        </select>
+        <div class="row workspaceActionBar" style="justify-content:flex-end;">
+          <button id="loadPlayerListBtn" disabled class="secondary">Load List</button>
+          <button id="savePlayerListBtn" disabled>Save Current List</button>
+        </div>
+      </div>
+
+      <div class="workspacePanel">
+        <div class="playerStatsSectionHeader">
+          <h4>Create / Edit</h4>
+          <div class="playersHeaderActions">
+            <button id="toggleBulkPlayersBtn" type="button" class="secondary playerIconBtn toggleBulkPlayersBtn" aria-label="Add many players" title="Add many players" aria-expanded="false" aria-controls="bulkPlayersPanel">
+              <span aria-hidden="true">&#128101;+</span>
+              <span class="srOnly">Add many players</span>
+            </button>
+            <span class="pill">Roster</span>
+          </div>
+        </div>
+        <label for="newPlayerName">Player Display Name</label>
+        <div class="playerAddRow">
+          <div class="col">
+            <input id="newPlayerName" type="text" placeholder="Player name" />
+          </div>
+          <button id="addPlayerBtn" type="button" class="addPlayerIconBtn" disabled aria-label="Add new player" title="Add new player">
+            <span aria-hidden="true">+</span>
+            <span class="srOnly">Add new player</span>
+          </button>
+        </div>
+
+        <div id="bulkPlayersPanel" class="bulkPlayersPanel" hidden>
+          <label for="bulkPlayersInput">Add Many Players</label>
+          <textarea id="bulkPlayersInput" rows="4" placeholder="One player per line or comma-separated"></textarea>
+          <div class="row workspaceActionBar" style="justify-content:flex-end;">
+            <button id="bulkAddPlayersBtn" class="secondary" disabled>
+              <span aria-hidden="true">&#128101;+</span>
+              <span>Add Many</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="row workspacePanel">
-    <div class="col">
-      <label for="newPlayerName">Add Player</label>
-      <input id="newPlayerName" type="text" placeholder="Player name" />
-    </div>
-    <div style="padding-top:30px">
-      <button id="addPlayerBtn" disabled>Add</button>
+    <div class="workspacePanel playersRosterPanel">
+      <div class="playersRosterHeader">
+        <h4>Player Roster</h4>
+        <span class="pill" id="playersRosterCount">0 Players</span>
+      </div>
+      <div class="playersRosterGrid" id="playersList"></div>
     </div>
   </div>
-
-  <label for="bulkPlayersInput">Add Many Players (one per line or comma-separated)</label>
-  <textarea id="bulkPlayersInput" rows="4" placeholder="e.g.\nAlice\nBob\nCharlie\n\nor: Alice, Bob, Charlie"></textarea>
-  <div class="row workspaceActionBar" style="justify-content: flex-end;">
-    <button id="bulkAddPlayersBtn" class="secondary" disabled>Add Many</button>
-  </div>
-
-  <div class="list" id="playersList"></div>
 </div>
 
 <!-- Shuttle Management tab -->
@@ -2439,35 +3400,6 @@ header('Expires: 0');
   <div class="shuttlePanel">
     <h4>Stock and Usage History</h4>
     <div id="shuttleHistoryOutput"></div>
-  </div>
-</div>
-
-<!-- Teams tab -->
-<div class="section featureView hidden" id="viewTeams" role="tabpanel" aria-labelledby="tabTeams">
-  <div class="workspaceHeader">
-    <div class="workspaceHeaderIcon" aria-hidden="true">&#129309;</div>
-    <div><h3>Teams</h3><div class="hint">Choose singles or doubles, build teams, and assign every player.</div></div>
-  </div>
-
-  <div class="row workspacePanel">
-    <div class="col">
-      <label for="matchType">Match Type</label>
-      <select id="matchType" disabled>
-        <option value="">-- Select --</option>
-        <option value="Singles">Singles (1 player per team)</option>
-        <option value="Doubles">Doubles (2 players per team)</option>
-      </select>
-    </div>
-    <div class="col">
-      <label for="teamsCount">No. of Teams</label>
-      <input id="teamsCount" type="number" min="2" placeholder="e.g., 4" disabled />
-    </div>
-  </div>
-
-  <div class="dataSurface" id="teamsPreview"></div>
-  <div class="row workspaceActionBar" style="justify-content: flex-end;">
-    <button id="buildTeamsBtn" class="secondary" disabled>Build Teams</button>
-    <button id="teamsGenerateScheduleBtn" disabled>Generate Schedule</button>
   </div>
 </div>
 
@@ -2678,6 +3610,7 @@ const STORAGE_KEYS = {
   playerStatsPlayer: 'bt_player_stats_player_v1',
   playerStatsPeriod: 'bt_player_stats_period_v1',
   shuttleManagement: 'bt_shuttle_management_v1',
+  homePlayerPhotos: 'bt_home_player_photos_v1',
 };
 
   // ----------------------------
@@ -2687,7 +3620,6 @@ const STORAGE_KEYS = {
   const viewTournament = document.getElementById('viewTournament');
   const viewPlayers = document.getElementById('viewPlayers');
   const viewShuttles = document.getElementById('viewShuttles');
-  const viewTeams = document.getElementById('viewTeams');
   const viewGroups = document.getElementById('viewGroups');
   const viewSchedule = document.getElementById('viewSchedule');
   const viewPoints = document.getElementById('viewPoints');
@@ -2698,18 +3630,24 @@ const STORAGE_KEYS = {
   const bottomNav = document.getElementById('bottomNav');
 
   const newTournamentNameInput = document.getElementById('newTournamentName');
+  const tournamentActionChooser = document.getElementById('tournamentActionChooser');
+  const startCreateTournamentBtn = document.getElementById('startCreateTournamentBtn');
+  const startLoadTournamentBtn = document.getElementById('startLoadTournamentBtn');
   const createTournamentPanel = document.getElementById('createTournamentPanel');
   const createTournamentBtn = document.getElementById('createTournamentBtn');
+  const tournamentCreateBackBtn = document.getElementById('tournamentCreateBackBtn');
   const loadTournamentPanel = document.getElementById('loadTournamentPanel');
   const loadTournamentSelect = document.getElementById('loadTournamentSelect');
   const loadTournamentBtn = document.getElementById('loadTournamentBtn');
   const deleteTournamentBtn = document.getElementById('deleteTournamentBtn');
+  const tournamentLoadBackBtn = document.getElementById('tournamentLoadBackBtn');
   const databaseBackupPanel = document.getElementById('databaseBackupPanel');
   const exportDatabaseBtn = document.getElementById('exportDatabaseBtn');
   const importDatabaseFile = document.getElementById('importDatabaseFile');
   const importDatabaseMode = document.getElementById('importDatabaseMode');
   const importDatabaseBtn = document.getElementById('importDatabaseBtn');
   const databaseBackupStatus = document.getElementById('databaseBackupStatus');
+  const tournamentTeamsSetupPanel = document.getElementById('tournamentTeamsSetupPanel');
 
   const bottomNavButtons = () => document.querySelectorAll('.bottomNavBtn');
 
@@ -2735,11 +3673,13 @@ const STORAGE_KEYS = {
   const savePlayerListBtn = document.getElementById('savePlayerListBtn');
   const newPlayerNameInput = document.getElementById('newPlayerName');
   const addPlayerBtn = document.getElementById('addPlayerBtn');
+  const toggleBulkPlayersBtn = document.getElementById('toggleBulkPlayersBtn');
+  const bulkPlayersPanel = document.getElementById('bulkPlayersPanel');
   const bulkPlayersInput = document.getElementById('bulkPlayersInput');
   const bulkAddPlayersBtn = document.getElementById('bulkAddPlayersBtn');
   const playersListDiv = document.getElementById('playersList');
+  const playersRosterCount = document.getElementById('playersRosterCount');
   const buildTeamsBtn = document.getElementById('buildTeamsBtn');
-  const teamsGenerateScheduleBtn = document.getElementById('teamsGenerateScheduleBtn');
   const teamsPreviewDiv = document.getElementById('teamsPreview');
   const groupsAssignmentOutput = document.getElementById('groupsAssignmentOutput');
   const autoFillGroupsBtn = document.getElementById('autoFillGroupsBtn');
@@ -2828,19 +3768,17 @@ const STORAGE_KEYS = {
   let tournamentEntryMode = null; // 'create' | 'load' | null
   let expandedPointsTeam = null;
 
+  function setTournamentFlowElementHidden(el, hidden) {
+    if (!el) return;
+    el.classList.toggle('hidden', hidden);
+    el.hidden = hidden;
+  }
+
   function updateTournamentHomePanels() {
     const hasTournament = !!tournament;
-    const hideCreate = hasTournament && tournamentEntryMode === 'load';
-    const hideLoad = hasTournament && tournamentEntryMode === 'create';
-
-    if (createTournamentPanel) {
-      createTournamentPanel.classList.toggle('hidden', hideCreate);
-      createTournamentPanel.hidden = hideCreate;
-    }
-    if (loadTournamentPanel) {
-      loadTournamentPanel.classList.toggle('hidden', hideLoad);
-      loadTournamentPanel.hidden = hideLoad;
-    }
+    setTournamentFlowElementHidden(tournamentActionChooser, hasTournament || !!tournamentEntryMode);
+    setTournamentFlowElementHidden(createTournamentPanel, hasTournament || tournamentEntryMode !== 'create');
+    setTournamentFlowElementHidden(loadTournamentPanel, hasTournament || tournamentEntryMode !== 'load');
   }
 
   function hideAllViews() {
@@ -2848,7 +3786,6 @@ const STORAGE_KEYS = {
       viewTournament,
       viewPlayers,
       viewShuttles,
-      viewTeams,
       viewGroups,
       viewSchedule,
       viewPoints,
@@ -2900,8 +3837,6 @@ const STORAGE_KEYS = {
         const isAdmin = !!currentAuthSession()?.isAdmin;
         btn.disabled = !isAdmin;
         btn.hidden = !isAdmin;
-      } else if (v === 'teams') {
-        btn.disabled = !hasTournament;
       } else if (v === 'groups') {
         btn.disabled = !(groupsEnabled && teamsBuiltForCount);
       } else {
@@ -2918,6 +3853,7 @@ const STORAGE_KEYS = {
 
   function setView(view) {
     if (view === 'final' || view === 'playoff') view = 'schedule';
+    if (view === 'teams') view = 'tournament';
     if (view === 'users' && !currentAuthSession()?.isAdmin) view = 'tournament';
     // Guard against disabled navigation
     const btn = document.querySelector(`.bottomNavBtn[data-view="${view}"]`);
@@ -2930,7 +3866,6 @@ const STORAGE_KEYS = {
       tournament: viewTournament,
       players: viewPlayers,
       shuttles: viewShuttles,
-      teams: viewTeams,
       groups: viewGroups,
       schedule: viewSchedule,
       points: viewPoints,
@@ -2992,6 +3927,21 @@ const STORAGE_KEYS = {
     // from feeling like it jumped to another section on mobile browsers.
   }
 
+  function showTournamentTeamsSetup() {
+    setView('tournament');
+    renderTeamsPreview();
+    updateBuildTeamsBtn();
+    window.setTimeout(() => {
+      if (!tournamentTeamsSetupPanel) return;
+      try {
+        tournamentTeamsSetupPanel.focus({ preventScroll: true });
+      } catch {
+        tournamentTeamsSetupPanel.focus();
+      }
+      tournamentTeamsSetupPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }
+
   // ----------------------------
   // Utilities
   // ----------------------------
@@ -3013,6 +3963,43 @@ const STORAGE_KEYS = {
       .split(/[\n,]+/g)
       .map(s => normalizePlayerName(s))
       .filter(Boolean);
+  }
+
+  function playerInitials(name) {
+    const parts = normalizePlayerName(name).split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
+  }
+
+  function readPlayerPhotoFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        reject(new Error('Select an image file.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Could not read the image file.'));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('Could not load the selected image.'));
+        image.onload = () => {
+          const size = 192;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, size, size);
+          const scale = Math.max(size / image.width, size / image.height);
+          const width = image.width * scale;
+          const height = image.height * scale;
+          ctx.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        };
+        image.src = String(reader.result || '');
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function lower(name) {
@@ -3281,6 +4268,28 @@ const STORAGE_KEYS = {
     localStorage.setItem(STORAGE_KEYS.homePlayersDraft, JSON.stringify(players || []));
   }
 
+  function playerPhotoKey(name) {
+    return lower(normalizePlayerName(name));
+  }
+
+  function normalizePlayerPhotoMap(map) {
+    const normalized = {};
+    if (!map || typeof map !== 'object' || Array.isArray(map)) return normalized;
+    Object.entries(map).forEach(([name, value]) => {
+      const key = playerPhotoKey(name);
+      if (key && typeof value === 'string' && value) normalized[key] = value;
+    });
+    return normalized;
+  }
+
+  function getHomePlayerPhotos() {
+    return normalizePlayerPhotoMap(safeJsonParse(localStorage.getItem(STORAGE_KEYS.homePlayerPhotos) || '{}', {}));
+  }
+
+  function setHomePlayerPhotos(photos) {
+    localStorage.setItem(STORAGE_KEYS.homePlayerPhotos, JSON.stringify(normalizePlayerPhotoMap(photos)));
+  }
+
   function createKnockoutMatch(id, stage) {
     return { id, stage, team1: '', team2: '', score1: null, score2: null };
   }
@@ -3421,6 +4430,44 @@ const STORAGE_KEYS = {
     return tournament ? (tournament.players || []) : getHomePlayersDraft();
   }
 
+  function getActivePlayerPhotos() {
+    if (tournament) {
+      tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
+      return tournament.playerPhotos;
+    }
+    return getHomePlayerPhotos();
+  }
+
+  function setActivePlayerPhotos(photos) {
+    const nextPhotos = normalizePlayerPhotoMap(photos);
+    setHomePlayerPhotos(nextPhotos);
+    if (tournament) {
+      tournament.playerPhotos = nextPhotos;
+      saveTournamentAndRefresh();
+    }
+  }
+
+  function getPlayerPhoto(playerName, sourceTournament = tournament) {
+    const key = playerPhotoKey(playerName);
+    if (!key) return '';
+    const tournamentPhotos = normalizePlayerPhotoMap(sourceTournament?.playerPhotos || {});
+    const homePhotos = getHomePlayerPhotos();
+    if (tournamentPhotos[key] || homePhotos[key]) return tournamentPhotos[key] || homePhotos[key];
+
+    const savedTournament = getAllSavedTournaments()
+      .find(saved => normalizePlayerPhotoMap(saved?.playerPhotos || {})[key]);
+    return savedTournament ? normalizePlayerPhotoMap(savedTournament.playerPhotos || {})[key] || '' : '';
+  }
+
+  function setPlayerPhoto(playerName, dataUrl) {
+    const key = playerPhotoKey(playerName);
+    if (!key) return;
+    const photos = getActivePlayerPhotos();
+    if (dataUrl) photos[key] = dataUrl;
+    else delete photos[key];
+    setActivePlayerPhotos(photos);
+  }
+
   function getPlayersForTeamAssignment() {
     if (tournament && Array.isArray(tournament.players) && tournament.players.length > 0) {
       return [...tournament.players];
@@ -3434,6 +4481,7 @@ const STORAGE_KEYS = {
     setHomePlayersDraft(nextPlayers);
     if (tournament) {
       tournament.players = nextPlayers;
+      tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
       saveTournamentAndRefresh();
     }
   }
@@ -3470,10 +4518,11 @@ const STORAGE_KEYS = {
     if (existing) {
       existing.name = t.name;
       existing.scheduledDate = t.scheduledDate || existing.scheduledDate || '';
+      existing.ownerUsername = t.ownerUsername || existing.ownerUsername || '';
       if (!existing.createdAt) existing.createdAt = existing.updatedAt || Date.now();
       existing.updatedAt = Date.now();
     } else {
-      idx.push({ id: t.id, name: t.name, scheduledDate: t.scheduledDate || '', createdAt: Date.now(), updatedAt: Date.now() });
+      idx.push({ id: t.id, name: t.name, ownerUsername: t.ownerUsername || '', scheduledDate: t.scheduledDate || '', createdAt: Date.now(), updatedAt: Date.now() });
     }
     idx.sort((a,b) => b.updatedAt - a.updatedAt);
     setIndex(STORAGE_KEYS.tournamentsIndex, idx);
@@ -3500,7 +4549,11 @@ const STORAGE_KEYS = {
 
   function upsertPlayerList(name, players) {
     const listId = lower(name);
-    localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify({ name, players }));
+    localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify({
+      name,
+      players,
+      playerPhotos: getActivePlayerPhotos(),
+    }));
     const idx = getIndex(STORAGE_KEYS.playerListsIndex);
     if (!idx.includes(listId)) idx.push(listId);
     idx.sort();
@@ -3513,6 +4566,12 @@ const STORAGE_KEYS = {
     return safeJsonParse(data, null);
   }
 
+  function ownerSuffix(ownerUsername) {
+    const session = currentAuthSession();
+    const owner = String(ownerUsername || '').trim();
+    return session?.isAdmin && owner ? ` (${owner})` : '';
+  }
+
   function refreshHomeDropdowns() {
     // tournaments
     const idx = getIndex(STORAGE_KEYS.tournamentsIndex);
@@ -3520,7 +4579,7 @@ const STORAGE_KEYS = {
     idx.forEach(x => {
       const opt = document.createElement('option');
       opt.value = x.id;
-      opt.textContent = x.name;
+      opt.textContent = `${x.name}${ownerSuffix(x.ownerUsername)}`;
       loadTournamentSelect.appendChild(opt);
     });
     loadTournamentBtn.disabled = !loadTournamentSelect.value;
@@ -3534,7 +4593,7 @@ const STORAGE_KEYS = {
       if (!pl) return;
       const opt = document.createElement('option');
       opt.value = id;
-      opt.textContent = pl.name;
+      opt.textContent = `${pl.name}${ownerSuffix(pl.ownerUsername)}`;
       playerListSelect.appendChild(opt);
     });
     loadPlayerListBtn.disabled = !playerListSelect.value;
@@ -3818,7 +4877,7 @@ const STORAGE_KEYS = {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'leaderboardPlayerLink';
-          btn.textContent = c;
+          btn.appendChild(createTeamPlayerTile(c));
           btn.addEventListener('click', () => openPlayerStatisticsForPlayer(c));
           td.appendChild(btn);
         } else {
@@ -4112,9 +5171,9 @@ const STORAGE_KEYS = {
       const rank = document.createElement('span');
       rank.className = 'playerRelationRank';
       rank.textContent = `#${index + 1}`;
-      const player = document.createElement('span');
+      const player = document.createElement('div');
       player.className = 'playerRelationName';
-      player.textContent = name;
+      player.appendChild(createTeamPlayerTile(name));
       const total = document.createElement('span');
       total.className = 'playerRelationCount';
       total.textContent = `${count} ${countLabel}`;
@@ -4207,13 +5266,11 @@ const STORAGE_KEYS = {
 
     const hero = document.createElement('div');
     hero.className = 'playerStatsHero';
-    const avatar = document.createElement('div');
-    avatar.className = 'playerStatsAvatar';
-    avatar.textContent = stats.player.charAt(0).toUpperCase();
+    const playerTile = createTeamPlayerTile(stats.player, 'playerStatsHeroPlayer');
     const identity = document.createElement('div');
     const heading = document.createElement('h4');
     heading.className = 'playerStatsName';
-    heading.textContent = stats.player;
+    heading.textContent = 'Player Summary';
     const meta = document.createElement('div');
     meta.className = 'playerStatsMeta';
     [
@@ -4246,7 +5303,7 @@ const STORAGE_KEYS = {
     winRateFill.style.width = `${Math.max(0, Math.min(100, stats.winRate))}%`;
     winRateTrack.appendChild(winRateFill);
     winRate.append(winRateTop, winRateTrack);
-    hero.append(avatar, identity, winRate);
+    hero.append(playerTile, identity, winRate);
     playerStatsOutput.appendChild(hero);
 
     const grid = document.createElement('div');
@@ -4747,21 +5804,133 @@ const STORAGE_KEYS = {
     playersListDiv.innerHTML = '';
 
     const players = getActivePlayersList();
+    if (playersRosterCount) {
+      playersRosterCount.textContent = `${players.length} ${players.length === 1 ? 'Player' : 'Players'}`;
+    }
     if (players.length === 0) {
       playersListDiv.innerHTML = '<div class="hint">No players added yet.</div>';
       return;
     }
 
     players.forEach((player, idx) => {
-      const row = document.createElement('div');
-      row.className = 'listItem';
+      const row = document.createElement('article');
+      row.className = 'playerCard';
 
-      const nameText = document.createElement('div');
-      nameText.className = 'playerNameText';
-      nameText.textContent = player;
+      const avatar = document.createElement('div');
+      avatar.className = 'playerAvatar';
+      const photo = getPlayerPhoto(player);
+      if (photo) {
+        const img = document.createElement('img');
+        img.src = photo;
+        img.alt = '';
+        avatar.appendChild(img);
+      } else {
+        avatar.textContent = playerInitials(player);
+      }
+
+      const body = document.createElement('div');
+      body.className = 'playerCardBody';
+
+      const displayName = document.createElement('div');
+      displayName.className = 'playerDisplayName';
+      displayName.textContent = player;
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.className = 'playerNameInput';
+      nameInput.value = player;
+      nameInput.setAttribute('aria-label', `Display name for ${player}`);
+      nameInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commitEdit.click();
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          renderPlayersList();
+        }
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'playerCardActions';
+
+      const setEditMode = (editing) => {
+        row.classList.toggle('isEditing', editing);
+        commitEdit.innerHTML = editing
+          ? '<span aria-hidden="true">&#10003;</span><span class="srOnly">Save player name</span>'
+          : '<span aria-hidden="true">&#9998;</span><span class="srOnly">Edit player details</span>';
+        commitEdit.setAttribute('aria-label', editing ? `Save ${player}` : `Edit ${player}`);
+        commitEdit.title = editing ? 'Save player name' : 'Edit player details';
+        if (editing) {
+          window.requestAnimationFrame(() => {
+            nameInput.focus();
+            nameInput.select();
+          });
+        }
+      };
+
+      const commitEdit = document.createElement('button');
+      commitEdit.type = 'button';
+      commitEdit.className = 'secondary playerIconBtn';
+      commitEdit.addEventListener('click', () => {
+        if (!row.classList.contains('isEditing')) {
+          setEditMode(true);
+          return;
+        }
+        const nextName = normalizePlayerName(nameInput.value);
+        if (nextName === player) {
+          nameInput.value = player;
+          setEditMode(false);
+          return;
+        }
+        renamePlayerAtIndex(idx, nextName);
+      });
+      setEditMode(false);
+
+      const uploadId = `playerPhoto_${idx}_${Math.random().toString(36).slice(2)}`;
+      const upload = document.createElement('input');
+      upload.id = uploadId;
+      upload.type = 'file';
+      upload.accept = 'image/*';
+      upload.className = 'photoUploadInput';
+      upload.addEventListener('change', async () => {
+        const file = upload.files?.[0];
+        if (!file) return;
+        try {
+          const dataUrl = await readPlayerPhotoFile(file);
+          setPlayerPhoto(player, dataUrl);
+          renderPlayersList();
+          renderTeamsPreview();
+          recalcAndRender();
+        } catch (error) {
+          alert(error?.message || 'Could not update player photo.');
+        } finally {
+          upload.value = '';
+        }
+      });
+
+      const uploadLabel = document.createElement('label');
+      uploadLabel.className = 'photoUploadBtn';
+      uploadLabel.htmlFor = uploadId;
+      uploadLabel.title = photo ? 'Update photo' : 'Add photo';
+      uploadLabel.setAttribute('aria-label', photo ? `Update photo for ${player}` : `Add photo for ${player}`);
+      uploadLabel.innerHTML = '<span aria-hidden="true">&#128247;</span><span class="srOnly">Add or update photo</span>';
+
+      const clearPhoto = document.createElement('button');
+      clearPhoto.type = 'button';
+      clearPhoto.className = 'secondary playerIconBtn';
+      clearPhoto.innerHTML = '<span aria-hidden="true">&#9003;</span><span class="srOnly">Clear photo</span>';
+      clearPhoto.setAttribute('aria-label', `Clear photo for ${player}`);
+      clearPhoto.title = 'Clear photo';
+      clearPhoto.disabled = !photo;
+      clearPhoto.addEventListener('click', () => {
+        setPlayerPhoto(player, '');
+        renderPlayersList();
+        recalcAndRender();
+      });
 
       const del = document.createElement('button');
-      del.className = 'danger removeIconBtn';
+      del.className = 'playerIconBtn playerRemoveBtn';
       del.type = 'button';
       del.textContent = '\u00d7';
       del.setAttribute('aria-label', `Remove ${player}`);
@@ -4769,23 +5938,67 @@ const STORAGE_KEYS = {
       del.addEventListener('click', () => {
         const list = [...getActivePlayersList()];
         list.splice(idx, 1);
+        const photos = getActivePlayerPhotos();
+        delete photos[playerPhotoKey(player)];
+        setActivePlayerPhotos(photos);
         setActivePlayersList(list);
         updateSavePlayerListBtnState();
         renderPlayersList();
         if (tournament) {
           tournament.teams = [];
           tournament.teamPlayers = {};
-          teamsPreviewDiv.innerHTML = '<div class="hint">Build teams after selecting match type and number of teams.</div>';
+          teamsPreviewDiv.innerHTML = '';
           updateGenerateScheduleBtn();
           updateBuildTeamsBtn();
           saveTournamentAndRefresh();
         }
       });
 
-      row.appendChild(nameText);
-      row.appendChild(del);
+      actions.append(commitEdit, uploadLabel, upload, clearPhoto, del);
+      body.append(displayName, nameInput);
+      row.append(avatar, body, actions);
       playersListDiv.appendChild(row);
     });
+  }
+
+  function renamePlayerAtIndex(index, nextName) {
+    const players = [...getActivePlayersList()];
+    const previousName = players[index];
+    const cleanName = normalizePlayerName(nextName);
+    if (!previousName || !cleanName) {
+      renderPlayersList();
+      return;
+    }
+    if (players.some((player, playerIndex) => playerIndex !== index && lower(player) === lower(cleanName))) {
+      alert('Player already exists.');
+      renderPlayersList();
+      return;
+    }
+    if (previousName === cleanName) return;
+
+    players[index] = cleanName;
+    const photos = getActivePlayerPhotos();
+    const previousKey = playerPhotoKey(previousName);
+    const nextKey = playerPhotoKey(cleanName);
+    if (photos[previousKey] && !photos[nextKey]) {
+      photos[nextKey] = photos[previousKey];
+    }
+    delete photos[previousKey];
+    setActivePlayerPhotos(photos);
+
+    if (tournament?.teamPlayers) {
+      Object.keys(tournament.teamPlayers).forEach(team => {
+        tournament.teamPlayers[team] = (tournament.teamPlayers[team] || []).map(player =>
+          lower(player) === lower(previousName) ? cleanName : player
+        );
+      });
+    }
+
+    setActivePlayersList(players);
+    renderPlayersList();
+    renderTeamsPreview();
+    recalcAndRender();
+    updateGenerateScheduleBtn();
   }
 
   function validatePlayersUniqueness() {
@@ -4897,14 +6110,12 @@ const STORAGE_KEYS = {
     const mapping = tournament.teamPlayers || {};
 
     if (!matchTypeSelect.value || getRequestedTeamsCount() < 2) {
-      teamsPreviewDiv.innerHTML = tournament.type === "Knockout"
-        ? "<div class=\"hint\">Select match type and Round Of in Tournament, then click Build Teams.</div>"
-        : "<div class=\"hint\">Select match type and number of teams, then click Build Teams.</div>";
+      teamsPreviewDiv.innerHTML = "";
       return;
     }
 
     if (!teams.length) {
-      teamsPreviewDiv.innerHTML = "<div class=\"hint\">Teams not built yet.</div>";
+      teamsPreviewDiv.innerHTML = "";
       return;
     }
 
@@ -5520,6 +6731,56 @@ const STORAGE_KEYS = {
     return players.join(' / ');
   }
 
+  function getTeamDisplayPlayers(team) {
+    if (!team) return ['-'];
+    const assigned = (tournament?.teamPlayers?.[team] || [])
+      .map(normalizePlayerName)
+      .filter(Boolean);
+    return assigned.length ? assigned : [getTeamDisplayName(team)];
+  }
+
+  function createTeamPlayerTile(playerName, extraClass = '') {
+    const tile = document.createElement('div');
+    tile.className = 'teamPlayerTile';
+    if (extraClass) tile.classList.add(extraClass);
+
+    const avatar = document.createElement('div');
+    avatar.className = 'teamPlayerAvatar';
+    const photoUrl = getPlayerPhoto(playerName);
+    if (photoUrl) {
+      const img = document.createElement('img');
+      img.src = photoUrl;
+      img.alt = '';
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = playerInitials(playerName);
+    }
+
+    const name = document.createElement('div');
+    name.className = 'teamPlayerName';
+    name.textContent = playerName || '-';
+    tile.append(avatar, name);
+    return tile;
+  }
+
+  function createTeamPhotoDisplay(team, options = {}) {
+    const display = document.createElement('div');
+    display.className = 'teamPhotoDisplay';
+    if (options.align === 'end') display.classList.add('alignEnd');
+    if (options.align === 'center') display.classList.add('alignCenter');
+    if (options.compact) display.classList.add('compact');
+    display.setAttribute('aria-label', getTeamDisplayName(team) || '-');
+    getTeamDisplayPlayers(team).forEach(player => {
+      display.appendChild(createTeamPlayerTile(player));
+    });
+    return display;
+  }
+
+  function appendTeamPhotoDisplay(cell, team, options = {}) {
+    cell.textContent = '';
+    cell.appendChild(createTeamPhotoDisplay(team, options));
+  }
+
   function getTeamFixtures(team) {
     if (!tournament || !team) return [];
     const regularFixtures = (tournament.matches || []).filter(match =>
@@ -5620,9 +6881,9 @@ const STORAGE_KEYS = {
       const matchCell = document.createElement('td');
       matchCell.textContent = match.id;
       const teamCell = document.createElement('td');
-      teamCell.textContent = getTeamDisplayName(team);
+      appendTeamPhotoDisplay(teamCell, team, { compact: true });
       const opponentCell = document.createElement('td');
-      opponentCell.textContent = getTeamDisplayName(teamIsFirst ? match.team2 : match.team1);
+      appendTeamPhotoDisplay(opponentCell, teamIsFirst ? match.team2 : match.team1, { compact: true });
 
       const teamScoreCell = document.createElement('td');
       const teamScoreInput = document.createElement('input');
@@ -5721,7 +6982,7 @@ const STORAGE_KEYS = {
             const teamButton = document.createElement('button');
             teamButton.type = 'button';
             teamButton.className = 'pointsTeamButton';
-            teamButton.textContent = c;
+            teamButton.appendChild(createTeamPhotoDisplay(s.team, { compact: true }));
             teamButton.setAttribute('aria-expanded', String(expandedPointsTeam === s.team));
             teamButton.setAttribute('aria-label', `${expandedPointsTeam === s.team ? 'Hide' : 'Show'} fixtures for ${c}`);
             teamButton.title = 'Show this team\'s fixtures and enter scores';
@@ -5830,7 +7091,7 @@ const STORAGE_KEYS = {
         tr.appendChild(tdId);
 
         const tdT1 = document.createElement('td');
-        tdT1.textContent = getTeamDisplayName(m.team1);
+        appendTeamPhotoDisplay(tdT1, m.team1, { align: 'end' });
         tr.appendChild(tdT1);
 
         const tdS1 = document.createElement('td');
@@ -5887,7 +7148,7 @@ const STORAGE_KEYS = {
         tr.appendChild(tdS2);
 
         const tdT2 = document.createElement('td');
-        tdT2.textContent = getTeamDisplayName(m.team2);
+        appendTeamPhotoDisplay(tdT2, m.team2);
         tr.appendChild(tdT2);
 
         tbody.appendChild(tr);
@@ -5947,6 +7208,29 @@ const STORAGE_KEYS = {
     return !!input && !input.disabled && !input.closest('[hidden], .hidden');
   }
 
+  function visibleScoreInputs() {
+    return [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
+      .filter(scoreInputIsVisible);
+  }
+
+  function focusScoreInput(input) {
+    if (!input || !scoreInputIsVisible(input)) return;
+    try {
+      input.focus({ preventScroll: true });
+    } catch {
+      input.focus();
+    }
+  }
+
+  function advanceScoreInputIfReady(input) {
+    if (!scoreInputIsVisible(input)) return;
+    if ((input.value || '').replace(/\D/g, '').length < 2) return;
+    const inputs = visibleScoreInputs();
+    const index = inputs.indexOf(input);
+    if (index < 0 || index >= inputs.length - 1) return;
+    focusScoreInput(inputs[index + 1]);
+  }
+
   function syncVisibleScoreInputsToTournament() {
     if (!tournament) return;
     document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]').forEach(input => {
@@ -5990,12 +7274,7 @@ const STORAGE_KEYS = {
     if (!snapshot) return;
     const target = [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
       .find(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide);
-    if (!target || target.disabled || target.closest('[hidden], .hidden')) return;
-    try {
-      target.focus({ preventScroll: true });
-    } catch {
-      target.focus();
-    }
+    focusScoreInput(target);
   }
 
   function scheduleScoreRender() {
@@ -6025,6 +7304,7 @@ const STORAGE_KEYS = {
     if (!input || !tournament) return;
     const match = applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
     patchTournamentScore(match, input.dataset.scoreSide);
+    advanceScoreInputIfReady(input);
   }, true);
 
   document.addEventListener('change', (event) => {
@@ -6213,7 +7493,7 @@ function createFinalsScheduleTable(matches, handleScore) {
     row.appendChild(stage);
 
     const team1 = document.createElement('td');
-    team1.textContent = getTeamDisplayName(match.team1);
+    appendTeamPhotoDisplay(team1, match.team1, { align: 'end' });
     row.appendChild(team1);
 
     const addScoreCell = (scoreKey) => {
@@ -6251,7 +7531,7 @@ function createFinalsScheduleTable(matches, handleScore) {
     });
 
     const team2 = document.createElement('td');
-    team2.textContent = getTeamDisplayName(match.team2);
+    appendTeamPhotoDisplay(team2, match.team2);
     row.appendChild(team2);
     tbody.appendChild(row);
   });
@@ -6286,7 +7566,7 @@ function renderFinalMatch(finalMatch) {
   renderFinalSummary(finalMatch);
 }
 
-function renderFinalSummary(finalMatch) {
+function renderFinalSummaryLegacy(finalMatch) {
   const existing = finalMatchOutput.querySelector('.finalSummary');
   if (existing) existing.remove();
 
@@ -6341,6 +7621,92 @@ function renderFinalSummary(finalMatch) {
   finalMatchOutput.prepend(summary);
 }
 
+function renderFinalSummary(finalMatch) {
+  const existing = finalMatchOutput.querySelector('.finalSummary');
+  if (existing) existing.remove();
+
+  const summary = document.createElement('div');
+  summary.className = 'finalSummary';
+  summary.style.marginTop = '16px';
+  summary.style.display = 'flex';
+  summary.style.flexDirection = 'column';
+  summary.style.gap = '12px';
+
+  const result = computeFinalResultFromFinalMatch(finalMatch);
+  if (!result) {
+    summary.style.fontSize = '13px';
+    summary.style.color = 'var(--muted)';
+    summary.textContent = 'Enter scores above to lock in champion and runner-up.';
+    tournament.finalResult = null;
+    saveTournament();
+  } else {
+    tournament.finalResult = result;
+    saveTournament();
+
+    const awards = document.createElement('div');
+    awards.className = 'finalAwards';
+
+    const awardPlayersForTeam = (team) => {
+      const assigned = (tournament?.teamPlayers?.[team] || [])
+        .map(normalizePlayerName)
+        .filter(Boolean);
+      return assigned.length ? assigned : [getTeamDisplayName(team)];
+    };
+
+    const createAwardPlayer = (playerName) => {
+      const item = document.createElement('div');
+      item.className = 'awardPlayer';
+      const photo = document.createElement('div');
+      photo.className = 'awardPlayerPhoto';
+      const photoUrl = getPlayerPhoto(playerName);
+      if (photoUrl) {
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.alt = '';
+        photo.appendChild(img);
+      } else {
+        photo.textContent = playerInitials(playerName);
+      }
+      const name = document.createElement('div');
+      name.className = 'awardPlayerName';
+      name.textContent = playerName;
+      item.append(photo, name);
+      return item;
+    };
+
+    const createAward = (kind, label, team) => {
+      const award = document.createElement('div');
+      award.className = `finalAward ${kind}`;
+      const icon = document.createElement('span');
+      icon.className = `finalAwardIcon ${kind === 'winner' ? 'trophy' : 'plate'}`;
+      icon.setAttribute('role', 'img');
+      icon.setAttribute('aria-label', kind === 'winner' ? 'Winner trophy' : 'Runner-up plate');
+      if (kind === 'winner') icon.textContent = '\u{1F3C6}';
+      const copy = document.createElement('div');
+      const awardLabel = document.createElement('div');
+      awardLabel.className = 'finalAwardLabel';
+      awardLabel.textContent = label;
+      const awardName = document.createElement('div');
+      awardName.className = 'finalAwardName';
+      awardName.textContent = getTeamDisplayName(team);
+      const players = document.createElement('div');
+      players.className = 'awardPlayers';
+      awardPlayersForTeam(team).forEach(player => players.appendChild(createAwardPlayer(player)));
+      copy.append(awardLabel, awardName, players);
+      award.append(icon, copy);
+      return award;
+    };
+
+    awards.append(
+      createAward('winner', 'Winner - Champion', result.winner),
+      createAward('runnerUp', 'Runner-up', result.runnerUp)
+    );
+    summary.appendChild(awards);
+  }
+
+  finalMatchOutput.prepend(summary);
+}
+
   // (Old in-section tabs removed; each feature has its own screen.)
 
   // ----------------------------
@@ -6362,7 +7728,6 @@ function renderFinalSummary(finalMatch) {
 
     if (!tournament) {
       disableButton(generateScheduleBtn);
-      disableButton(teamsGenerateScheduleBtn);
       disableButton(groupsGenerateScheduleBtn);
       disableButton(autoFillGroupsBtn);
       updateBottomNavState();
@@ -6394,12 +7759,10 @@ function renderFinalSummary(finalMatch) {
     const canGenerate = typeOk && fixtureOk && teamsOk && assignmentsOk && groupsOk && knockoutOk;
     const canOpenGroupAssignment = typeOk && fixtureOk && teamsOk;
     setButtonState(generateScheduleBtn, groupsEnabled ? canOpenGroupAssignment : canGenerate);
-    setButtonState(teamsGenerateScheduleBtn, groupsEnabled ? canOpenGroupAssignment : canGenerate);
     setButtonState(groupsGenerateScheduleBtn, canGenerate);
     setButtonState(autoFillGroupsBtn, groupsEnabled && teamsOk);
     const primaryGenerateLabel = groupsEnabled && teamsOk && (!groupsOk || !assignmentsOk) ? 'Assign Group Players' : 'Generate Schedule';
     generateScheduleBtn.textContent = primaryGenerateLabel;
-    if (teamsGenerateScheduleBtn) teamsGenerateScheduleBtn.textContent = primaryGenerateLabel;
     if (groupsGenerateScheduleBtn) groupsGenerateScheduleBtn.textContent = 'Generate Schedule';
     updateBottomNavState();
   }
@@ -6421,6 +7784,7 @@ function renderFinalSummary(finalMatch) {
       teamsPerGroup: 0,
       knockoutRoundOf: 0,
       players: [...getHomePlayersDraft()],
+      playerPhotos: getHomePlayerPhotos(),
       teams: [],
       teamPlayers: {},
       groupAssignments: [],
@@ -6443,8 +7807,10 @@ function renderFinalSummary(finalMatch) {
     if (!t) return;
     tournament = {
       groupAssignments: [],
+      playerPhotos: {},
       ...t,
     };
+    tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
     expandedPointsTeam = null;
     tournamentEntryMode = 'load';
     localStorage.setItem(STORAGE_KEYS.activeTournamentId, id);
@@ -6484,9 +7850,45 @@ function renderFinalSummary(finalMatch) {
   // ----------------------------
   // Event wiring
   // ----------------------------
+  startCreateTournamentBtn?.addEventListener('click', () => {
+    tournamentEntryMode = 'create';
+    newTournamentNameInput.value = '';
+    createTournamentBtn.disabled = true;
+    loadTournamentSelect.value = '';
+    loadTournamentBtn.disabled = true;
+    deleteTournamentBtn.disabled = true;
+    updateTournamentHomePanels();
+    window.setTimeout(() => newTournamentNameInput.focus(), 0);
+  });
+
+  startLoadTournamentBtn?.addEventListener('click', () => {
+    tournamentEntryMode = 'load';
+    newTournamentNameInput.value = '';
+    createTournamentBtn.disabled = true;
+    refreshHomeDropdowns();
+    updateTournamentHomePanels();
+    window.setTimeout(() => loadTournamentSelect.focus(), 0);
+  });
+
+  tournamentCreateBackBtn?.addEventListener('click', () => {
+    tournamentEntryMode = null;
+    newTournamentNameInput.value = '';
+    createTournamentBtn.disabled = true;
+    updateTournamentHomePanels();
+    startCreateTournamentBtn?.focus();
+  });
+
+  tournamentLoadBackBtn?.addEventListener('click', () => {
+    tournamentEntryMode = null;
+    loadTournamentSelect.value = '';
+    loadTournamentBtn.disabled = true;
+    deleteTournamentBtn.disabled = true;
+    updateTournamentHomePanels();
+    startLoadTournamentBtn?.focus();
+  });
+
   newTournamentNameInput.addEventListener('input', () => {
-    // Create Tournament is always enabled now (no conditional gating)
-    createTournamentBtn.disabled = false;
+    createTournamentBtn.disabled = newTournamentNameInput.value.trim() === '';
   });
 
   createTournamentBtn.addEventListener('click', () => {
@@ -6502,11 +7904,6 @@ function renderFinalSummary(finalMatch) {
   loadTournamentSelect.addEventListener('change', () => {
     loadTournamentBtn.disabled = !loadTournamentSelect.value;
     deleteTournamentBtn.disabled = !loadTournamentSelect.value;
-    if (loadTournamentSelect.value) {
-      loadTournament(loadTournamentSelect.value);
-      bindTournamentToUI();
-      setView('tournament');
-    }
   });
 
   loadTournamentBtn.addEventListener('click', () => {
@@ -6741,6 +8138,7 @@ function renderFinalSummary(finalMatch) {
     const pl = loadPlayerList(playerListSelect.value);
     if (!pl) return;
     setActivePlayersList(pl.players || []);
+    setActivePlayerPhotos(pl.playerPhotos || pl.photos || {});
     renderPlayersList();
     updateSavePlayerListBtnState();
     if (tournament) {
@@ -6764,6 +8162,21 @@ function renderFinalSummary(finalMatch) {
     upsertPlayerList(name, players);
     refreshHomeDropdowns();
     alert('Player list saved.');
+  });
+
+  const setBulkPlayersPanelOpen = (open) => {
+    if (!bulkPlayersPanel || !toggleBulkPlayersBtn) return;
+    bulkPlayersPanel.hidden = !open;
+    toggleBulkPlayersBtn.setAttribute('aria-expanded', String(open));
+    toggleBulkPlayersBtn.title = open ? 'Hide many-player entry' : 'Add many players';
+    toggleBulkPlayersBtn.setAttribute('aria-label', open ? 'Hide many-player entry' : 'Add many players');
+    if (open) {
+      window.requestAnimationFrame(() => bulkPlayersInput?.focus());
+    }
+  };
+
+  toggleBulkPlayersBtn?.addEventListener('click', () => {
+    setBulkPlayersPanelOpen(!!bulkPlayersPanel?.hidden);
   });
 
   newPlayerNameInput.addEventListener('input', () => {
@@ -6820,6 +8233,7 @@ function renderFinalSummary(finalMatch) {
     setActivePlayersList(players);
     bulkPlayersInput.value = '';
     bulkAddPlayersBtn.disabled = true;
+    setBulkPlayersPanelOpen(false);
     updateSavePlayerListBtnState();
     renderPlayersList();
     if (tournament) {
@@ -6854,7 +8268,7 @@ function renderFinalSummary(finalMatch) {
     const teamsCount = getRequestedTeamsCount();
     const req = requiredPlayersPerTeam();
     if (!Number.isFinite(teamsCount) || teamsCount < 2) {
-      alert(tournament.type === "Knockout" ? "Please enter a valid Round Of value (min 2)." : "Please enter a valid number of teams (min 2).");
+      alert(tournament.type === "Knockout" ? "Please enter a valid knockout round size (min 2)." : "Please enter a valid number of teams (min 2).");
       return;
     }
     if (req === 0) {
@@ -6905,7 +8319,7 @@ function renderFinalSummary(finalMatch) {
 
     if (!validateTeamAssignments()) {
       alert('Please complete all team player selections first.');
-      setView('teams');
+      showTournamentTeamsSetup();
       return;
     }
 
@@ -6922,7 +8336,7 @@ function renderFinalSummary(finalMatch) {
       if (!hasCompleteGroupAssignments()) {
         renderGroupsAssignment();
         alert('Please review and complete group player selections first.');
-        setView('teams');
+        showTournamentTeamsSetup();
         return;
       }
       const configuredGroups = getConfiguredGroups();
@@ -6954,9 +8368,6 @@ function renderFinalSummary(finalMatch) {
   }
 
   generateScheduleBtn.addEventListener('click', generateScheduleFromCurrentTournament);
-  if (teamsGenerateScheduleBtn) {
-    teamsGenerateScheduleBtn.addEventListener('click', generateScheduleFromCurrentTournament);
-  }
   if (groupsGenerateScheduleBtn) {
     groupsGenerateScheduleBtn.addEventListener('click', generateScheduleFromCurrentTournament);
   }

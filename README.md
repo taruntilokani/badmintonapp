@@ -46,6 +46,8 @@ bt_app_settings
 - `bt_player_lists`: one row per saved player list per account.
 - `bt_app_settings`: small app preferences per account, such as active view, filters, shuttle settings, and indexes.
 
+Ownership is enforced on the server. Regular users only export, load, update, and delete rows where `owner_username` matches their login. New users receive empty tournament and player-list indexes, so they start fresh even on a shared browser. Admin users can load all tournaments and player lists, and the dropdown labels include the row owner for clarity. Legacy unowned rows use a blank owner and remain admin-visible for migration.
+
 When multiple sessions are logged in, session refresh/logout writes only touch `bt_sessions`, tournament saves only touch the relevant tournament rows, and score entry uses a small `patch_match_score` API call against the match-score table. The tournament snapshot still exists for compatibility, but exported data overlays the latest match-score rows before loading the app.
 
 Player lists are account-level, not tournament-level. Adding or loading players inside a tournament also updates that account's player draft, so the next new tournament starts with the same roster and saved lists stay available for that same login.
@@ -64,6 +66,7 @@ index.php
 api.php
 database.php
 db-config.php
+bs-optimized.png
 health.php
 diagnose.php
 VERSION.txt
