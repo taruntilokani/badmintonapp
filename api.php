@@ -12,12 +12,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'database.php';
 
-const SESSION_IDLE_SECONDS = 120;
+const SESSION_IDLE_SECONDS = 300;
 const MAX_ACTIVE_SESSIONS = 3;
 const TOURNAMENT_KEY_PREFIX = 'bt_tournament_v1_';
 const PLAYER_LIST_KEY_PREFIX = 'bt_playerlist_v1_';
 const TOURNAMENTS_INDEX_KEY = 'bt_tournaments_index_v1';
 const PLAYER_LISTS_INDEX_KEY = 'bt_playerlists_index_v1';
+const PLAYER_PHOTO_PUBLIC_PREFIX = 'uploads/player-photos';
+const PLAYER_PHOTO_SIZE = 144;
+const PLAYER_PHOTO_MAX_UPLOAD_BYTES = 1048576;
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
@@ -230,6 +233,154 @@ function ownerUsername($username): string
 function userOwnsAllData(array $user): bool
 {
     return !empty($user['is_admin']);
+}
+
+function playerPhotoStorageRoot(): string
+{
+    return __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, PLAYER_PHOTO_PUBLIC_PREFIX);
+}
+
+function safePhotoOwnerSegment(array $user): string
+{
+    $owner = ownerUsername($user['username'] ?? '');
+    $owner = preg_replace('/[^a-z0-9._-]+/', '-', $owner) ?: 'user';
+    return substr(trim($owner, '.-'), 0, 48) ?: 'user';
+}
+
+function playerPhotoFilename(string $playerName): string
+{
+    $normalized = strtolower(trim($playerName));
+    if ($normalized === '') {
+        fail('Player name is required.', 400);
+    }
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $normalized) ?: 'player';
+    $slug = substr(trim($slug, '-'), 0, 48) ?: 'player';
+    return $slug . '-' . substr(sha1($normalized), 0, 12) . '.jpg';
+}
+
+function ensurePlayerPhotoDirectory(array $user): string
+{
+    $root = playerPhotoStorageRoot();
+    if (!is_dir($root) && !mkdir($root, 0755, true) && !is_dir($root)) {
+        fail('Cannot create player photo storage folder.', 500);
+    }
+    $ownerDir = $root . DIRECTORY_SEPARATOR . safePhotoOwnerSegment($user);
+    if (!is_dir($ownerDir) && !mkdir($ownerDir, 0755, true) && !is_dir($ownerDir)) {
+        fail('Cannot create account player photo folder.', 500);
+    }
+    if (!is_writable($ownerDir)) {
+        fail('Player photo folder is not writable.', 500);
+    }
+    return $ownerDir;
+}
+
+function decodePlayerPhotoDataUrl(string $dataUrl): string
+{
+    if (!preg_match('/^data:image\/(?:jpeg|jpg|png|webp);base64,([a-z0-9+\/=\r\n]+)$/i', trim($dataUrl), $matches)) {
+        fail('A valid image data URL is required.', 400);
+    }
+    $binary = base64_decode($matches[1], true);
+    if ($binary === false || $binary === '') {
+        fail('The uploaded image could not be decoded.', 400);
+    }
+    if (strlen($binary) > PLAYER_PHOTO_MAX_UPLOAD_BYTES) {
+        fail('The uploaded image is too large.', 413);
+    }
+    if (@getimagesizefromstring($binary) === false) {
+        fail('The uploaded file is not a valid image.', 400);
+    }
+    return $binary;
+}
+
+function encodePlayerPhotoJpeg(string $binary): string
+{
+    if (!function_exists('imagecreatefromstring')) {
+        return $binary;
+    }
+    $source = @imagecreatefromstring($binary);
+    if (!$source) {
+        return $binary;
+    }
+
+    $sourceWidth = imagesx($source);
+    $sourceHeight = imagesy($source);
+    $sourceSize = max(1, min($sourceWidth, $sourceHeight));
+    $sourceX = (int) max(0, ($sourceWidth - $sourceSize) / 2);
+    $sourceY = (int) max(0, ($sourceHeight - $sourceSize) / 2);
+
+    $canvas = imagecreatetruecolor(PLAYER_PHOTO_SIZE, PLAYER_PHOTO_SIZE);
+    $white = imagecolorallocate($canvas, 255, 255, 255);
+    imagefill($canvas, 0, 0, $white);
+    imagecopyresampled(
+        $canvas,
+        $source,
+        0,
+        0,
+        $sourceX,
+        $sourceY,
+        PLAYER_PHOTO_SIZE,
+        PLAYER_PHOTO_SIZE,
+        $sourceSize,
+        $sourceSize
+    );
+
+    ob_start();
+    imagejpeg($canvas, null, 84);
+    $jpeg = (string) ob_get_clean();
+    imagedestroy($source);
+    imagedestroy($canvas);
+    return $jpeg !== '' ? $jpeg : $binary;
+}
+
+function playerPhotoPublicUrl(array $user, string $filename): string
+{
+    return PLAYER_PHOTO_PUBLIC_PREFIX . '/' . rawurlencode(safePhotoOwnerSegment($user)) . '/' . rawurlencode($filename) . '?v=' . time();
+}
+
+function savePlayerPhotoFile(array $user, string $playerName, string $dataUrl): array
+{
+    $directory = ensurePlayerPhotoDirectory($user);
+    $filename = playerPhotoFilename($playerName);
+    $binary = encodePlayerPhotoJpeg(decodePlayerPhotoDataUrl($dataUrl));
+    $target = $directory . DIRECTORY_SEPARATOR . $filename;
+    if (file_put_contents($target, $binary, LOCK_EX) === false) {
+        fail('Could not save player photo.', 500);
+    }
+    @chmod($target, 0644);
+    return [
+        'ok' => true,
+        'url' => playerPhotoPublicUrl($user, $filename),
+        'bytes' => strlen($binary),
+    ];
+}
+
+function deletePlayerPhotoFile(array $user, string $photoUrl, string $playerName = ''): void
+{
+    $filename = '';
+    $path = parse_url($photoUrl, PHP_URL_PATH);
+    if (is_string($path) && $path !== '') {
+        $filename = rawurldecode(basename($path));
+    }
+    if ($filename === '' && trim($playerName) !== '') {
+        $filename = playerPhotoFilename($playerName);
+    }
+    if (!preg_match('/^[a-z0-9][a-z0-9._-]*\.jpg$/', $filename)) {
+        return;
+    }
+
+    $target = playerPhotoStorageRoot()
+        . DIRECTORY_SEPARATOR
+        . safePhotoOwnerSegment($user)
+        . DIRECTORY_SEPARATOR
+        . $filename;
+    $resolvedTarget = realpath($target);
+    $resolvedOwnerDir = realpath(playerPhotoStorageRoot() . DIRECTORY_SEPARATOR . safePhotoOwnerSegment($user));
+    if (!$resolvedTarget || !$resolvedOwnerDir || strncmp($resolvedTarget, $resolvedOwnerDir, strlen($resolvedOwnerDir)) !== 0) {
+        return;
+    }
+    if (is_file($resolvedTarget)) {
+        @unlink($resolvedTarget);
+    }
 }
 
 function decodeStoredArray(string $json): ?array
@@ -1432,6 +1583,23 @@ switch ($action) {
     case 'delete_tournament':
         list($user) = requireUser($payload['auth_token'] ?? '');
         deleteTournamentRecord($user, trim((string) ($payload['tournament_id'] ?? '')));
+        respond(['ok' => true]);
+
+    case 'upload_player_photo':
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        respond(savePlayerPhotoFile(
+            $user,
+            trim((string) ($payload['player_name'] ?? '')),
+            (string) ($payload['image_data'] ?? '')
+        ));
+
+    case 'delete_player_photo':
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        deletePlayerPhotoFile(
+            $user,
+            trim((string) ($payload['photo_url'] ?? '')),
+            trim((string) ($payload['player_name'] ?? ''))
+        );
         respond(['ok' => true]);
 
     case 'save_player_list':

@@ -1,0 +1,19 @@
+Options -Indexes
+
+<FilesMatch "\.(jpe?g|png|webp)$">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Allow from all
+  </IfModule>
+</FilesMatch>
+
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh|asp|aspx|jsp)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Deny from all
+  </IfModule>
+</FilesMatch>

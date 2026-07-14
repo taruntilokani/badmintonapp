@@ -8,8 +8,8 @@ header('Expires: 0');
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Mobile-first viewport for Android phones -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <!-- Mobile-first viewport for phone/tablet browsers -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Badminton Tournament Manager</title>
   <style>
     :root {
@@ -28,6 +28,8 @@ header('Expires: 0');
       --danger-soft: #fee2e2;
       --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
       --focus-ring: 0 0 0 3px rgba(20, 184, 166, 0.18);
+      --app-vh: 1vh;
+      --touch-target: 44px;
     }
 
     * {
@@ -45,6 +47,7 @@ header('Expires: 0');
       margin: 0;
       padding: 16px 12px 28px;
       min-height: 100vh;
+      min-height: calc(var(--app-vh) * 100);
       width: 100%;
       max-width: 100vw;
       overflow-x: hidden;
@@ -296,8 +299,13 @@ header('Expires: 0');
     }
 
     #sessionBar {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      z-index: 70;
+      width: auto;
       padding: 0;
-      margin-bottom: 10px;
+      margin: 0;
       border: 0;
       background: transparent;
       box-shadow: none;
@@ -314,28 +322,25 @@ header('Expires: 0');
       display: inline-flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 6px;
       min-width: 0;
-      padding: 7px 8px 7px 12px;
+      padding: 5px 5px 5px 10px;
       border: 1px solid var(--border);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .accountLabel {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      white-space: nowrap;
+      display: none;
     }
 
     .accountName {
-      max-width: 240px;
+      max-width: 150px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -343,10 +348,18 @@ header('Expires: 0');
     }
 
     #sessionLogoutBtn {
-      min-height: 32px;
-      padding: 7px 11px;
+      width: 30px !important;
+      min-width: 30px !important;
+      height: 30px !important;
+      min-height: 30px !important;
+      padding: 0;
       border-radius: 999px;
-      font-size: 12px;
+      background: #ffffff;
+      color: var(--danger);
+      border-color: var(--border);
+      font-size: 17px;
+      line-height: 1;
+      box-shadow: none;
     }
 
     .tournamentFlow {
@@ -530,6 +543,48 @@ header('Expires: 0');
       margin-top: 12px;
     }
 
+    .compactPeriodControls {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.8fr) minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    #playerStatsControls.compactPeriodControls {
+      grid-template-columns: minmax(180px, 1.4fr) minmax(112px, 0.45fr) minmax(180px, 0.8fr);
+    }
+
+    .compactPeriodControls .col {
+      min-width: 0;
+    }
+
+    .compactPeriodControls label {
+      margin-top: 0;
+    }
+
+    .compactPeriodControls select,
+    .compactPeriodControls button {
+      margin-bottom: 0;
+    }
+
+    .leaderboardShareCol {
+      flex: 0 0 auto;
+    }
+
+    #shareLeaderboardBtn {
+      width: 44px;
+      min-width: 44px;
+      height: 42px;
+      min-height: 42px;
+      padding: 0;
+      font-size: 20px;
+      white-space: nowrap;
+    }
+
+    #leaderboardShareStatus {
+      margin-top: 8px;
+    }
+
     #pointsTableOutput tbody tr:first-child td {
       background: #ecfdf5;
       color: #14532d;
@@ -547,16 +602,19 @@ header('Expires: 0');
     }
 
     .playersManager {
-      display: grid;
-      grid-template-columns: minmax(260px, 0.95fr) minmax(320px, 1.15fr);
+      display: flex;
+      flex-direction: column;
       gap: 14px;
-      align-items: start;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    #viewPlayers {
+      width: min(100%, 1180px);
     }
 
     .playersControlPanel {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      margin-bottom: 0;
     }
 
     .playersControlPanel .workspacePanel {
@@ -573,6 +631,8 @@ header('Expires: 0');
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
     }
 
     .playersRosterHeader h4 {
@@ -585,10 +645,46 @@ header('Expires: 0');
       gap: 8px;
     }
 
-    .playersRosterGrid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .playersTableShell {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .playersTable {
+      width: 100%;
+      margin: 0;
+      table-layout: fixed;
+      background: #ffffff;
+    }
+
+    .playersTable th,
+    .playersTable td {
+      vertical-align: middle;
+    }
+
+    .playersTable th:nth-child(1),
+    .playersTable td:nth-child(1) {
+      width: 92px;
+      text-align: center;
+    }
+
+    .playersTable th:nth-child(3),
+    .playersTable td:nth-child(3) {
+      width: 190px;
+      text-align: right;
+    }
+
+    .playersTable tbody tr:hover td {
+      background: #f8fffd;
+    }
+
+    .playersTable .playerAvatar {
+      margin: 0 auto;
+    }
+
+    .playersTable .playerCardActions {
+      justify-content: flex-end;
     }
 
     .playerAddRow {
@@ -602,10 +698,20 @@ header('Expires: 0');
       margin-bottom: 0;
     }
 
+    .playerInlinePanel {
+      margin: 0 0 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
     .bulkPlayersPanel {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+      margin: 0 0 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .playerCard {
@@ -665,11 +771,13 @@ header('Expires: 0');
       font-weight: 750;
     }
 
-    .playerCard.isEditing .playerDisplayName {
+    .playerCard.isEditing .playerDisplayName,
+    .playerTableRow.isEditing .playerDisplayName {
       display: none;
     }
 
-    .playerCard.isEditing .playerNameInput {
+    .playerCard.isEditing .playerNameInput,
+    .playerTableRow.isEditing .playerNameInput {
       display: block;
     }
 
@@ -725,6 +833,7 @@ header('Expires: 0');
       font-size: 24px;
     }
 
+    .toggleAddPlayerBtn[aria-expanded="true"],
     .toggleBulkPlayersBtn[aria-expanded="true"] {
       background: #ecfeff;
       border-color: #5eead4;
@@ -1554,6 +1663,23 @@ header('Expires: 0');
       background: #ffffff;
     }
 
+    button.playerRelationRow {
+      width: 100%;
+      min-height: 0;
+      color: var(--text);
+      text-align: left;
+      box-shadow: none;
+      cursor: pointer;
+    }
+
+    button.playerRelationRow:hover:not(:disabled),
+    button.playerRelationRow.isActive {
+      border-color: var(--primary);
+      background: #f0fdfa;
+      transform: none;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.08);
+    }
+
     .playerRelationRank {
       color: var(--muted);
       font-size: 11px;
@@ -1581,6 +1707,107 @@ header('Expires: 0');
       font-weight: 800;
     }
 
+    .playerRelationRecord {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .playerRelationDetail {
+      margin-top: 10px;
+      padding: 12px;
+      border: 1px solid #99f6e4;
+      border-radius: 8px;
+      background: #f0fdfa;
+    }
+
+    .playerRelationDetailHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .playerRelationDetailHeader h5 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .playerRelationSummary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .playerRelationSummary .pill {
+      background: #ffffff;
+    }
+
+    .playerFixtureList {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .playerFixtureCard {
+      display: grid;
+      grid-template-columns: minmax(96px, 0.7fr) minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .playerFixtureMeta {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .playerFixtureTeams {
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .playerFixtureTeams strong {
+      color: var(--text);
+    }
+
+    .playerFixtureResult {
+      display: grid;
+      justify-items: end;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .playerResultBadge.win { color: #166534; background: #dcfce7; }
+    .playerResultBadge.loss { color: #991b1b; background: #fee2e2; }
+    .playerResultBadge.tie { color: #334155; background: #e2e8f0; }
+
+    .playerRelationAnalytics {
+      margin-top: 10px;
+    }
+
+    .playerRelationAnalytics table {
+      width: 100%;
+      min-width: 0;
+      table-layout: fixed;
+    }
+
+    .playerRelationAnalytics th,
+    .playerRelationAnalytics td {
+      white-space: normal;
+      vertical-align: top;
+      font-size: 12px;
+    }
+
     .playerResultBadge {
       display: inline-block;
       padding: 3px 8px;
@@ -1595,6 +1822,161 @@ header('Expires: 0');
     .playerResultBadge.played { color: #166534; background: #dcfce7; }
     .playerResultBadge.registered { color: var(--muted); background: #f1f5f9; }
 
+    .teamPairingLayout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .pairingModeGroup {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .pairingModeOption {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 9px 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+      font-weight: 750;
+    }
+
+    .pairingModeOption input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    .pairingToolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+
+    .pairingToolbar button {
+      width: auto;
+      min-height: 34px;
+      padding: 7px 10px;
+    }
+
+    .teamPairingPlayerGrid {
+      display: grid;
+      gap: 8px;
+      max-height: 520px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .pairingPlayerOption {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 9px;
+      align-items: center;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .pairingPlayerOption input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
+    .pairingPlayerOption .teamPlayerTile {
+      align-items: center;
+      justify-items: start;
+      grid-template-columns: 38px minmax(0, 1fr);
+      max-width: none;
+      text-align: left;
+    }
+
+    .pairingPlayerOption .teamPlayerAvatar {
+      width: 38px;
+      height: 38px;
+      font-size: 12px;
+    }
+
+    .teamPairingSummary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .pairingResultList {
+      display: grid;
+      gap: 10px;
+    }
+
+    .pairingTeamCard {
+      display: grid;
+      grid-template-columns: 70px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .pairingTeamNo {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      color: var(--primary-strong);
+      background: var(--primary-soft);
+      font-size: 12px;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .pairingTeamPlayers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .pairingTeamPlayers .teamPlayerTile {
+      min-width: 74px;
+      max-width: 120px;
+    }
+
+    .pairingTeamMeta {
+      grid-column: 2;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .pairingWaitingList {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
     @media (max-width: 700px) {
       .playerStatsHero {
         grid-template-columns: auto minmax(0, 1fr);
@@ -1605,6 +1987,10 @@ header('Expires: 0');
       }
 
       .playerStatsSplit {
+        grid-template-columns: 1fr;
+      }
+
+      .teamPairingLayout {
         grid-template-columns: 1fr;
       }
     }
@@ -1694,14 +2080,10 @@ header('Expires: 0');
 
     .pointsTeamButton {
       appearance: none;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      justify-content: stretch;
-      gap: 8px;
+      display: block;
       width: 100%;
       min-height: 0;
-      padding: 6px 7px;
+      padding: 4px 7px;
       border: 0;
       border-radius: 6px;
       background: transparent;
@@ -1790,6 +2172,7 @@ header('Expires: 0');
 
     .pointsTeamButton::after {
       content: "\25BE";
+      float: right;
       margin-left: 8px;
       transition: transform 0.15s ease;
     }
@@ -1945,21 +2328,28 @@ header('Expires: 0');
       }
 
       .playersManager {
-        grid-template-columns: 1fr;
+        width: 100%;
       }
 
-      .playerCard {
-        grid-template-columns: 48px minmax(0, 1fr);
+      .playersRosterHeader {
+        align-items: flex-start;
+        flex-direction: column;
       }
 
-      .playerAvatar {
-        width: 48px;
-        height: 48px;
-      }
-
-      .playerCardActions {
-        grid-column: 1 / -1;
+      .playersHeaderActions {
+        width: 100%;
         justify-content: flex-end;
+      }
+
+      .playersTable {
+        min-width: 620px;
+      }
+
+      .playersTable .playerIconBtn,
+      .playersTable .photoUploadBtn,
+      .playersHeaderActions .playerIconBtn {
+        width: 36px !important;
+        min-width: 36px !important;
       }
     }
 
@@ -2049,19 +2439,17 @@ header('Expires: 0');
 
     .authFormHeader .authEyebrow {
       color: var(--primary-strong);
-    }
-
-    .authFormHeader h3 {
       margin: 7px 0 8px;
       font-size: clamp(25px, 4vw, 34px);
       font-weight: 880;
+      line-height: 1.1;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
+    .authFormHeader h3,
     .authFormHeader p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
+      display: none;
     }
 
     #authSection .authPanel h4 {
@@ -2407,6 +2795,517 @@ header('Expires: 0');
       }
     }
 
+    @media (max-width: 900px) {
+      body {
+        min-height: 100svh;
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
+      }
+
+      h1,
+      .subTitle,
+      .section,
+      .bottomNav,
+      #viewPlayers {
+        width: 100%;
+      }
+
+      .section,
+      .workspacePanel,
+      .dataSurface,
+      .shuttlePanel,
+      .playerStatsSection,
+      .tournamentFlowPanel {
+        min-width: 0;
+      }
+
+      .dataSurface,
+      #groupsAssignmentOutput,
+      #finalLeaderboardOutput,
+      #usersList,
+      #shuttleBorrowersOutput,
+      #shuttleHistoryOutput,
+      #historySchedulePanel {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      #pointsTableOutput table,
+      #usersList table,
+      #shuttleBorrowersOutput table,
+      #shuttleHistoryOutput table {
+        min-width: 640px;
+      }
+
+      .row {
+        gap: 10px;
+      }
+
+      .row > .col {
+        flex: 1 1 min(320px, 100%);
+        min-width: min(220px, 100%);
+      }
+
+      .tournamentSetupGrid {
+        max-width: 100%;
+      }
+
+      .finalAwards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-left: max(6px, env(safe-area-inset-left));
+        padding-right: max(6px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+
+      h1 {
+        margin-bottom: 3px;
+        padding: 0 2px;
+      }
+
+      .subTitle {
+        margin-bottom: 10px;
+        padding: 0 2px;
+        font-size: 12px;
+      }
+
+      .section {
+        margin-bottom: 10px;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+      }
+
+      .workspaceHeader {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .workspaceHeader h3 {
+        font-size: 18px;
+      }
+
+      .workspaceHeader .hint {
+        font-size: 11px;
+      }
+
+      .bottomNav {
+        top: 0;
+        gap: 4px;
+        scroll-snap-type: x proximity;
+      }
+
+      .bottomNav button {
+        flex-basis: clamp(96px, 31vw, 132px);
+        min-width: 0;
+        min-height: var(--touch-target);
+        scroll-snap-align: start;
+      }
+
+      button,
+      input[type=text],
+      input[type=password],
+      input[type=number],
+      input[type=date],
+      input[type=time],
+      input[type=file],
+      select,
+      textarea {
+        min-height: var(--touch-target);
+      }
+
+      .row,
+      .workspaceActionBar {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .row > *,
+      .workspaceActionBar > * {
+        min-width: 0;
+      }
+
+      .row > button,
+      .workspaceActionBar > button,
+      .row > .col > button {
+        width: 100%;
+      }
+
+      #leaderboardPeriodControls.compactPeriodControls {
+        display: grid;
+        grid-template-columns: minmax(72px, 0.58fr) minmax(122px, 1fr) 46px;
+        gap: 7px;
+        align-items: end;
+        padding: 10px;
+      }
+
+      #playerStatsControls.compactPeriodControls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 82px minmax(118px, 1fr);
+        gap: 7px;
+        align-items: end;
+        padding: 10px;
+      }
+
+      #playerStatsControls .playerStatsPlayerCol {
+        grid-column: 1 / -1;
+      }
+
+      #leaderboardPeriodControls .col,
+      #playerStatsControls .col {
+        min-width: 0;
+      }
+
+      #leaderboardPeriodControls label,
+      #playerStatsControls label {
+        margin: 0 0 4px;
+        font-size: 9px;
+        line-height: 1.15;
+        white-space: nowrap;
+      }
+
+      #leaderboardPeriodControls select,
+      #playerStatsControls select {
+        min-height: 40px;
+        padding: 7px 6px;
+        margin-bottom: 0;
+        font-size: 13px;
+      }
+
+      #shareLeaderboardBtn {
+        width: 44px !important;
+        min-width: 44px;
+        height: 40px;
+        min-height: 40px;
+        margin-top: 0;
+      }
+
+      .accountBar {
+        justify-content: flex-end;
+      }
+
+      .accountPill {
+        width: auto;
+        border-radius: 999px;
+      }
+
+      .playerIconBtn,
+      .photoUploadBtn {
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+      }
+
+      .addPlayerIconBtn {
+        width: 44px !important;
+        min-width: 44px !important;
+        height: var(--touch-target) !important;
+      }
+
+      .historyCalendarHeader button {
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+      }
+
+      .removeIconBtn {
+        width: 34px !important;
+        min-width: 34px !important;
+        height: 34px !important;
+        min-height: 34px !important;
+      }
+
+      #teamsCount,
+      #groupsCount,
+      #teamsPerGroup {
+        width: 126px !important;
+        min-width: 96px;
+        max-width: min(126px, 100%);
+      }
+
+      .tournamentChoiceCard {
+        gap: 12px;
+        min-height: 118px;
+      }
+
+      .tournamentChoiceIcon {
+        width: 48px;
+        height: 48px;
+      }
+
+      .tournamentChoiceTitle {
+        font-size: 16px;
+      }
+
+      .playersTableShell {
+        overflow-x: visible;
+      }
+
+      .playersTable {
+        display: block;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      .playersTable thead {
+        display: none;
+      }
+
+      .playersTable tbody {
+        display: grid;
+        gap: 8px;
+      }
+
+      .playersTable tr {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .playersTable th,
+      .playersTable td {
+        display: block;
+        width: auto !important;
+        padding: 0;
+        border: 0;
+        background: transparent !important;
+        text-align: left;
+        white-space: normal;
+      }
+
+      .playersTable td:nth-child(1) {
+        grid-column: 1;
+      }
+
+      .playersTable td:nth-child(2) {
+        grid-column: 2;
+      }
+
+      .playersTable td:nth-child(3) {
+        grid-column: 3;
+      }
+
+      .playersTable .playerCardActions {
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+        max-width: 84px;
+      }
+
+      :is(#scheduleOutput, #playoffBracketOutput, #finalMatchOutput) .scheduleTable tr {
+        grid-template-columns: minmax(0, 1fr) 48px 12px 48px minmax(0, 1fr);
+      }
+
+      :is(#scheduleOutput, #playoffBracketOutput, #finalMatchOutput) .teamPhotoDisplay {
+        gap: 5px;
+      }
+
+      :is(#scheduleOutput, #playoffBracketOutput, #finalMatchOutput) .teamPlayerTile {
+        min-width: 42px;
+        max-width: 56px;
+      }
+
+      :is(#scheduleOutput, #playoffBracketOutput, #finalMatchOutput) .teamPlayerAvatar {
+        width: 34px;
+        height: 34px;
+        font-size: 11px;
+      }
+
+      :is(#scheduleOutput, #playoffBracketOutput, #finalMatchOutput) .teamPlayerName {
+        font-size: 10px;
+      }
+
+      .statGrid,
+      .shuttleSummary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .playerStatsHero {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .playerStatsMeta {
+        justify-content: center;
+      }
+
+      .playerWinRate {
+        width: 100%;
+      }
+
+      .playerRelationRow {
+        grid-template-columns: 24px minmax(0, 1fr) auto;
+      }
+
+      .playerFixtureCard {
+        grid-template-columns: 1fr;
+        gap: 7px;
+      }
+
+      .playerFixtureResult {
+        justify-items: start;
+      }
+
+      .playerRelationDetailHeader {
+        display: grid;
+      }
+
+      .historyCalendar {
+        padding: 10px;
+      }
+
+      .historyCalendarWeekdays,
+      .historyCalendarGrid {
+        gap: 3px;
+      }
+
+      #finalLeaderboardOutput {
+        overflow-x: visible;
+      }
+
+      #finalLeaderboardOutput table {
+        display: table;
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: fixed;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #ffffff;
+        font-size: 10px;
+      }
+
+      #finalLeaderboardOutput thead {
+        display: table-header-group;
+      }
+
+      #finalLeaderboardOutput tbody {
+        display: table-row-group;
+      }
+
+      #finalLeaderboardOutput tr {
+        display: table-row;
+      }
+
+      #finalLeaderboardOutput th,
+      #finalLeaderboardOutput td {
+        display: table-cell;
+        padding: 6px 2px;
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      #finalLeaderboardOutput th {
+        font-size: 7.5px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      #finalLeaderboardOutput td {
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      #finalLeaderboardOutput th:nth-child(1),
+      #finalLeaderboardOutput td:nth-child(1) {
+        width: 30px;
+      }
+
+      #finalLeaderboardOutput th:nth-child(2),
+      #finalLeaderboardOutput td:nth-child(2) {
+        width: 32%;
+      }
+
+      #finalLeaderboardOutput td:first-child {
+        color: var(--primary-strong);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      #finalLeaderboardOutput td::before {
+        display: none;
+      }
+
+      #finalLeaderboardOutput tbody tr:nth-child(1) td {
+        background: #fffbeb;
+      }
+
+      #finalLeaderboardOutput .leaderboardPlayerLink {
+        width: 100%;
+        padding: 0;
+        text-align: center;
+      }
+
+      #finalLeaderboardOutput .leaderboardPlayerLink .teamPlayerTile {
+        max-width: none;
+        margin: 0;
+        min-width: 0;
+        gap: 2px;
+        text-align: center;
+      }
+
+      #finalLeaderboardOutput .teamPlayerAvatar {
+        width: 26px;
+        height: 26px;
+        font-size: 9px;
+      }
+
+      #finalLeaderboardOutput .teamPlayerName {
+        width: 100%;
+        font-size: 8.5px;
+        line-height: 1.1;
+        overflow-wrap: anywhere;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .accountPill {
+        display: inline-flex;
+        gap: 6px;
+      }
+
+      #sessionLogoutBtn {
+        width: 30px;
+      }
+
+      .playersTable tr {
+        grid-template-columns: 54px minmax(0, 1fr);
+      }
+
+      .playersTable td:nth-child(3) {
+        grid-column: 1 / -1;
+      }
+
+      .playersTable .playerCardActions {
+        max-width: none;
+        justify-content: flex-end;
+      }
+
+      .statGrid,
+      .shuttleSummary {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 380px) {
       .bottomNav button {
         min-width: 96px;
@@ -2417,6 +3316,10 @@ header('Expires: 0');
 
       th, td {
         padding: 7px 6px;
+      }
+
+      #finalLeaderboardOutput td {
+        padding: 5px 1px;
       }
     }
 
@@ -2445,6 +3348,26 @@ header('Expires: 0');
 </head>
 <body>
 <script>
+  (function syncResponsiveViewport() {
+    const root = document.documentElement;
+    const setProfile = () => {
+      const visualWidth = Math.round(window.visualViewport?.width || window.innerWidth || root.clientWidth || 0);
+      const visualHeight = Math.round(window.visualViewport?.height || window.innerHeight || root.clientHeight || 0);
+      root.style.setProperty('--app-vh', `${Math.max(visualHeight, 1) * 0.01}px`);
+      root.dataset.viewSize = visualWidth < 480
+        ? 'phone'
+        : visualWidth < 768
+          ? 'large-phone'
+          : visualWidth < 1024
+            ? 'tablet'
+            : 'desktop';
+    };
+    setProfile();
+    window.addEventListener('resize', setProfile, { passive: true });
+    window.addEventListener('orientationchange', setProfile, { passive: true });
+    window.visualViewport?.addEventListener('resize', setProfile, { passive: true });
+  })();
+
   // PHP-hosted persistence + app login:
   // Domain data is read/written through the same-host token-protected PHP API.
   (function bootstrapServerBackedStorage() {
@@ -2515,7 +3438,7 @@ header('Expires: 0');
     const nativeRemoveItem = Storage.prototype.removeItem;
     const sessionKey = 'bt_auth_session_v1';
     const sessionNoticeKey = 'bt_auth_notice_v1';
-    const sessionIdleTimeoutMs = 2 * 60 * 1000;
+    const sessionIdleTimeoutMs = 5 * 60 * 1000;
     const sessionRefreshMs = 1000;
     const sessionActivityEvents = ['click', 'keydown', 'input', 'pointerdown', 'touchstart', 'scroll'];
     let lastActivityAt = Date.now();
@@ -2596,7 +3519,7 @@ header('Expires: 0');
       try {
         const text = await res.clone().text();
         if (text.includes('Invalid or expired session')) {
-          expireLocalSession('Session expired after 2 minutes of inactivity. Please log in again.', false);
+          expireLocalSession('Session expired after 5 minutes of inactivity. Please log in again.', false);
         }
       } catch (error) {
         console.warn('Could not inspect auth response:', error);
@@ -2648,7 +3571,7 @@ header('Expires: 0');
       const delay = Math.max(0, sessionIdleTimeoutMs - elapsed);
       idleTimer = window.setTimeout(() => {
         if (Date.now() - lastActivityAt >= sessionIdleTimeoutMs) {
-          expireLocalSession('Session expired after 2 minutes of inactivity. Please log in again.');
+          expireLocalSession('Session expired after 5 minutes of inactivity. Please log in again.');
           return;
         }
         scheduleIdleTimeout();
@@ -2659,7 +3582,7 @@ header('Expires: 0');
       const session = getSession();
       if (!session?.token || sessionRefreshInFlight) return;
       if (Date.now() - lastActivityAt >= sessionIdleTimeoutMs) {
-        expireLocalSession('Session expired after 2 minutes of inactivity. Please log in again.');
+        expireLocalSession('Session expired after 5 minutes of inactivity. Please log in again.');
         return;
       }
 
@@ -2773,7 +3696,7 @@ header('Expires: 0');
           return true;
         }
         if ((xhr.responseText || '').includes('Invalid or expired session')) {
-          setSessionNotice('Session expired after 2 minutes of inactivity. Please log in again.');
+          setSessionNotice('Session expired after 5 minutes of inactivity. Please log in again.');
         }
         clearSession();
       } catch (error) {
@@ -2902,6 +3825,38 @@ header('Expires: 0');
       }));
     }
 
+    async function uploadPlayerPhoto(playerName, imageData) {
+      const token = authToken();
+      if (!token || document.documentElement.dataset.storageMode === 'local') return null;
+      const res = await postRpc('upload_player_photo', {
+        auth_token: token,
+        player_name: playerName,
+        image_data: imageData,
+      });
+      const responseText = await res.text();
+      if (!res.ok) throw new Error(responseText || `Photo upload failed with HTTP ${res.status}.`);
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        throw new Error('The server returned an invalid photo upload response.');
+      }
+    }
+
+    async function deletePlayerPhoto(photoUrl, playerName) {
+      const token = authToken();
+      if (!token || document.documentElement.dataset.storageMode === 'local' || !photoUrl) return null;
+      const res = await postRpc('delete_player_photo', {
+        auth_token: token,
+        photo_url: photoUrl,
+        player_name: playerName || '',
+      });
+      if (!res.ok) {
+        const responseText = await res.text();
+        throw new Error(responseText || `Photo delete failed with HTTP ${res.status}.`);
+      }
+      return true;
+    }
+
     function flushPendingDatabaseWrites() {
       return waitForQueuedDatabaseWrites();
     }
@@ -2939,6 +3894,8 @@ header('Expires: 0');
       patchMatchScore,
       syncTournamentScores,
       syncScoreRows,
+      uploadPlayerPhoto,
+      deletePlayerPhoto,
       authToken,
       startSessionActivityWatch,
       flushPendingDatabaseWrites,
@@ -3018,7 +3975,7 @@ header('Expires: 0');
     <div class="accountPill">
       <span class="accountLabel">Signed in</span>
       <span class="accountName" id="signedInUser">-</span>
-      <button id="sessionLogoutBtn" class="secondary" type="button">Logout</button>
+      <button id="sessionLogoutBtn" class="secondary" type="button" aria-label="Logout" title="Logout">&#9211;</button>
     </div>
   </div>
 </div>
@@ -3033,9 +3990,8 @@ header('Expires: 0');
 
   <div class="authFormPanel">
     <div class="authFormHeader">
-      <div class="authEyebrow">Welcome back</div>
-      <h3 id="authHeading">Account Access</h3>
-      <p>Sign in to continue managing tournaments and score updates.</p>
+      <div class="authEyebrow">Hello Striker !!</div>
+      <h3 id="authHeading">Hello Striker !!</h3>
     </div>
 
     <div id="loginPanel" class="authPanel">
@@ -3066,13 +4022,14 @@ header('Expires: 0');
 <div class="bottomNav" id="bottomNav" role="tablist" aria-label="Tournament features" aria-orientation="horizontal">
   <button id="tabTournament" class="bottomNavBtn active" data-view="tournament" role="tab" aria-controls="viewTournament" aria-selected="true">Tournament</button>
   <button id="tabPlayers" class="bottomNavBtn" data-view="players" role="tab" aria-controls="viewPlayers" aria-selected="false">Players</button>
-  <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
+  <button id="tabPairing" class="bottomNavBtn" data-view="pairing" role="tab" aria-controls="viewPairing" aria-selected="false">Team Pairing</button>
   <button id="tabSchedule" class="bottomNavBtn" data-view="schedule" role="tab" aria-controls="viewSchedule" aria-selected="false" disabled>Schedule</button>
   <button id="tabPoints" class="bottomNavBtn" data-view="points" role="tab" aria-controls="viewPoints" aria-selected="false" disabled>Points</button>
   <button id="tabUsers" class="bottomNavBtn" data-view="users" role="tab" aria-controls="usersAdminSection" aria-selected="false" disabled>Users</button>
   <button id="tabLeaderboard" class="bottomNavBtn" data-view="leaderboard" role="tab" aria-controls="viewLeaderboard" aria-selected="false">Leaderboard</button>
   <button id="tabStats" class="bottomNavBtn" data-view="stats" role="tab" aria-controls="viewStats" aria-selected="false">Player Statistics</button>
   <button id="tabHistory" class="bottomNavBtn" data-view="history" role="tab" aria-controls="viewHistory" aria-selected="false">History</button>
+  <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
 </div>
 
 <!-- Unified, feature-based screens (one feature per tab) -->
@@ -3253,33 +4210,39 @@ header('Expires: 0');
   </div>
 
   <div class="playersManager">
-    <div class="playersControlPanel">
-      <div class="workspacePanel">
-        <div class="playerStatsSectionHeader">
-          <h4>Player Lists</h4>
-          <span class="pill">Account</span>
-        </div>
-        <label for="playerListSelect">Saved Player List</label>
-        <select id="playerListSelect">
-          <option value="">-- Select --</option>
-        </select>
-        <div class="row workspaceActionBar" style="justify-content:flex-end;">
-          <button id="loadPlayerListBtn" disabled class="secondary">Load List</button>
-          <button id="savePlayerListBtn" disabled>Save Current List</button>
+    <div class="workspacePanel playersControlPanel">
+      <div class="playerStatsSectionHeader">
+        <h4>Player Lists</h4>
+        <span class="pill">Account</span>
+      </div>
+      <label for="playerListSelect">Saved Player List</label>
+      <select id="playerListSelect">
+        <option value="">-- Select --</option>
+      </select>
+      <div class="row workspaceActionBar" style="justify-content:flex-end;">
+        <button id="loadPlayerListBtn" disabled class="secondary">Load List</button>
+        <button id="savePlayerListBtn" disabled>Save Current List</button>
+        <button id="deletePlayerListBtn" disabled class="danger" type="button">Delete List</button>
+      </div>
+    </div>
+
+    <div class="workspacePanel playersRosterPanel">
+      <div class="playersRosterHeader">
+        <h4>Player Roster</h4>
+        <div class="playersHeaderActions">
+          <span class="pill" id="playersRosterCount">0 Players</span>
+          <button id="toggleAddPlayerBtn" type="button" class="secondary playerIconBtn toggleAddPlayerBtn" aria-label="Add new player" title="Add new player" aria-expanded="false" aria-controls="playerAddPanel">
+            <span aria-hidden="true">+</span>
+            <span class="srOnly">Add new player</span>
+          </button>
+          <button id="toggleBulkPlayersBtn" type="button" class="secondary playerIconBtn toggleBulkPlayersBtn" aria-label="Add many players" title="Add many players" aria-expanded="false" aria-controls="bulkPlayersPanel">
+            <span aria-hidden="true">&#128101;+</span>
+            <span class="srOnly">Add many players</span>
+          </button>
         </div>
       </div>
 
-      <div class="workspacePanel">
-        <div class="playerStatsSectionHeader">
-          <h4>Create / Edit</h4>
-          <div class="playersHeaderActions">
-            <button id="toggleBulkPlayersBtn" type="button" class="secondary playerIconBtn toggleBulkPlayersBtn" aria-label="Add many players" title="Add many players" aria-expanded="false" aria-controls="bulkPlayersPanel">
-              <span aria-hidden="true">&#128101;+</span>
-              <span class="srOnly">Add many players</span>
-            </button>
-            <span class="pill">Roster</span>
-          </div>
-        </div>
+      <div id="playerAddPanel" class="playerInlinePanel" hidden>
         <label for="newPlayerName">Player Display Name</label>
         <div class="playerAddRow">
           <div class="col">
@@ -3290,26 +4253,61 @@ header('Expires: 0');
             <span class="srOnly">Add new player</span>
           </button>
         </div>
+      </div>
 
-        <div id="bulkPlayersPanel" class="bulkPlayersPanel" hidden>
-          <label for="bulkPlayersInput">Add Many Players</label>
-          <textarea id="bulkPlayersInput" rows="4" placeholder="One player per line or comma-separated"></textarea>
-          <div class="row workspaceActionBar" style="justify-content:flex-end;">
-            <button id="bulkAddPlayersBtn" class="secondary" disabled>
-              <span aria-hidden="true">&#128101;+</span>
-              <span>Add Many</span>
-            </button>
-          </div>
+      <div id="bulkPlayersPanel" class="bulkPlayersPanel" hidden>
+        <label for="bulkPlayersInput">Add Many Players</label>
+        <textarea id="bulkPlayersInput" rows="4" placeholder="One player per line or comma-separated"></textarea>
+        <div class="row workspaceActionBar" style="justify-content:flex-end;">
+          <button id="bulkAddPlayersBtn" class="secondary" disabled>
+            <span aria-hidden="true">&#128101;+</span>
+            <span>Add Many</span>
+          </button>
         </div>
       </div>
-    </div>
 
-    <div class="workspacePanel playersRosterPanel">
-      <div class="playersRosterHeader">
-        <h4>Player Roster</h4>
-        <span class="pill" id="playersRosterCount">0 Players</span>
+      <div class="playersTableShell">
+        <div id="playersList"></div>
       </div>
-      <div class="playersRosterGrid" id="playersList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Pairing tab -->
+<div class="section featureView hidden" id="viewPairing" role="tabpanel" aria-labelledby="tabPairing">
+  <div class="workspaceHeader">
+    <div class="workspaceHeaderIcon" aria-hidden="true">&#129309;</div>
+    <div><h3>Team Pairing</h3><div class="hint">Select today players and generate singles or doubles teams from the loaded player list.</div></div>
+  </div>
+  <div class="teamPairingLayout">
+    <div class="workspacePanel">
+      <div class="playerStatsSectionHeader">
+        <h4>Playing Today</h4>
+        <span class="pill" id="pairingSelectedCount">0 selected</span>
+      </div>
+      <div class="pairingModeGroup" role="radiogroup" aria-label="Pairing match type">
+        <label class="pairingModeOption">
+          <input type="radio" name="pairingMatchType" value="Singles" />
+          <span>Singles</span>
+        </label>
+        <label class="pairingModeOption">
+          <input type="radio" name="pairingMatchType" value="Doubles" checked />
+          <span>Doubles</span>
+        </label>
+      </div>
+      <div class="pairingToolbar">
+        <button id="pairingSelectAllBtn" type="button" class="secondary">Select All</button>
+        <button id="pairingClearBtn" type="button" class="secondary">Clear</button>
+        <button id="generatePairingBtn" type="button">Generate</button>
+      </div>
+      <div id="pairingPlayersList" class="teamPairingPlayerGrid"></div>
+    </div>
+    <div class="workspacePanel">
+      <div class="playerStatsSectionHeader">
+        <h4>Suggested Teams</h4>
+        <span class="pill" id="pairingModeSummary">Doubles</span>
+      </div>
+      <div id="pairingOutput" class="pairingResultList"></div>
     </div>
   </div>
 </div>
@@ -3492,7 +4490,7 @@ header('Expires: 0');
     </div>
   </div>
   <div class="hint">Original leaderboard scoring, calculated only from tournaments in the selected month.</div>
-  <div class="row workspacePanel" id="leaderboardPeriodControls">
+  <div class="row workspacePanel compactPeriodControls" id="leaderboardPeriodControls">
     <div class="col">
       <label for="leaderboardYearSelect">Year</label>
       <select id="leaderboardYearSelect"></select>
@@ -3507,8 +4505,16 @@ header('Expires: 0');
         <option value="10">October</option><option value="11">November</option><option value="12">December</option>
       </select>
     </div>
+    <div class="col leaderboardShareCol">
+      <label for="shareLeaderboardBtn">Share</label>
+      <button id="shareLeaderboardBtn" type="button" class="secondary" disabled aria-label="Share leaderboard image" title="Share leaderboard image">
+        <span aria-hidden="true">&#128247;</span>
+        <span class="srOnly">Share Image</span>
+      </button>
+    </div>
   </div>
   <div id="leaderboardPeriodSummary" class="statSubtle"></div>
+  <div id="leaderboardShareStatus" class="authStatus" aria-live="polite"></div>
   <div class="dataSurface" id="finalLeaderboardOutput"></div>
 </div>
 
@@ -3518,8 +4524,8 @@ header('Expires: 0');
     <div class="workspaceHeaderIcon" aria-hidden="true">&#128200;</div>
     <div><h3>Player Statistics</h3><div class="hint">Explore form, results, titles, partners, and opponents for any player.</div></div>
   </div>
-  <div class="row workspacePanel">
-    <div class="col">
+  <div class="row workspacePanel compactPeriodControls" id="playerStatsControls">
+    <div class="col playerStatsPlayerCol">
       <label for="playerStatsSelect">Player</label>
       <select id="playerStatsSelect">
         <option value="">-- Select Player --</option>
@@ -3619,6 +4625,7 @@ const STORAGE_KEYS = {
   // Views (one feature per tab)
   const viewTournament = document.getElementById('viewTournament');
   const viewPlayers = document.getElementById('viewPlayers');
+  const viewPairing = document.getElementById('viewPairing');
   const viewShuttles = document.getElementById('viewShuttles');
   const viewGroups = document.getElementById('viewGroups');
   const viewSchedule = document.getElementById('viewSchedule');
@@ -3671,14 +4678,24 @@ const STORAGE_KEYS = {
   const playerListSelect = document.getElementById('playerListSelect');
   const loadPlayerListBtn = document.getElementById('loadPlayerListBtn');
   const savePlayerListBtn = document.getElementById('savePlayerListBtn');
+  const deletePlayerListBtn = document.getElementById('deletePlayerListBtn');
   const newPlayerNameInput = document.getElementById('newPlayerName');
   const addPlayerBtn = document.getElementById('addPlayerBtn');
+  const toggleAddPlayerBtn = document.getElementById('toggleAddPlayerBtn');
+  const playerAddPanel = document.getElementById('playerAddPanel');
   const toggleBulkPlayersBtn = document.getElementById('toggleBulkPlayersBtn');
   const bulkPlayersPanel = document.getElementById('bulkPlayersPanel');
   const bulkPlayersInput = document.getElementById('bulkPlayersInput');
   const bulkAddPlayersBtn = document.getElementById('bulkAddPlayersBtn');
   const playersListDiv = document.getElementById('playersList');
   const playersRosterCount = document.getElementById('playersRosterCount');
+  const pairingPlayersList = document.getElementById('pairingPlayersList');
+  const pairingSelectedCount = document.getElementById('pairingSelectedCount');
+  const pairingSelectAllBtn = document.getElementById('pairingSelectAllBtn');
+  const pairingClearBtn = document.getElementById('pairingClearBtn');
+  const generatePairingBtn = document.getElementById('generatePairingBtn');
+  const pairingOutput = document.getElementById('pairingOutput');
+  const pairingModeSummary = document.getElementById('pairingModeSummary');
   const buildTeamsBtn = document.getElementById('buildTeamsBtn');
   const teamsPreviewDiv = document.getElementById('teamsPreview');
   const groupsAssignmentOutput = document.getElementById('groupsAssignmentOutput');
@@ -3698,6 +4715,8 @@ const STORAGE_KEYS = {
   const leaderboardYearSelect = document.getElementById('leaderboardYearSelect');
   const leaderboardMonthSelect = document.getElementById('leaderboardMonthSelect');
   const leaderboardPeriodSummary = document.getElementById('leaderboardPeriodSummary');
+  const shareLeaderboardBtn = document.getElementById('shareLeaderboardBtn');
+  const leaderboardShareStatus = document.getElementById('leaderboardShareStatus');
   const playerStatsSelect = document.getElementById('playerStatsSelect');
   const playerStatsOutput = document.getElementById('playerStatsOutput');
   const playerStatsYearSelect = document.getElementById('playerStatsYearSelect');
@@ -3744,6 +4763,7 @@ const STORAGE_KEYS = {
   let historyCalendarCursor = null;
   let leaderboardControlsInitialized = false;
   let scoreRenderTimer = null;
+  let playerPhotoLookupCache = null;
 
   // ----------------------------
   // State
@@ -3785,6 +4805,7 @@ const STORAGE_KEYS = {
     [
       viewTournament,
       viewPlayers,
+      viewPairing,
       viewShuttles,
       viewGroups,
       viewSchedule,
@@ -3831,7 +4852,7 @@ const STORAGE_KEYS = {
 
     bottomNavButtons().forEach(btn => {
       const v = btn.dataset.view;
-      if (v === 'tournament' || v === 'players' || v === 'shuttles' || v === 'leaderboard' || v === 'stats' || v === 'history') {
+      if (v === 'tournament' || v === 'players' || v === 'pairing' || v === 'shuttles' || v === 'leaderboard' || v === 'stats' || v === 'history') {
         btn.disabled = false;
       } else if (v === 'users') {
         const isAdmin = !!currentAuthSession()?.isAdmin;
@@ -3865,6 +4886,7 @@ const STORAGE_KEYS = {
     const map = {
       tournament: viewTournament,
       players: viewPlayers,
+      pairing: viewPairing,
       shuttles: viewShuttles,
       groups: viewGroups,
       schedule: viewSchedule,
@@ -3886,6 +4908,9 @@ const STORAGE_KEYS = {
       refreshHomeDropdowns();
       renderPlayersList();
       updateSavePlayerListBtnState();
+    }
+    if (view === 'pairing') {
+      renderTeamPairing();
     }
     if (view === 'shuttles') {
       renderShuttleManagement();
@@ -3971,6 +4996,31 @@ const STORAGE_KEYS = {
     return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
   }
 
+  function compressPlayerPhotoImage(image) {
+    const size = 144;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+
+    const sourceSize = Math.min(image.width, image.height);
+    const sourceX = Math.max(0, (image.width - sourceSize) / 2);
+    const sourceY = Math.max(0, (image.height - sourceSize) / 2);
+    ctx.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
+
+    let quality = 0.84;
+    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+    while (dataUrl.length > 42000 && quality > 0.66) {
+      quality -= 0.06;
+      dataUrl = canvas.toDataURL('image/jpeg', quality);
+    }
+    return dataUrl;
+  }
+
   function readPlayerPhotoFile(file) {
     return new Promise((resolve, reject) => {
       if (!file || !file.type.startsWith('image/')) {
@@ -3983,18 +5033,7 @@ const STORAGE_KEYS = {
         const image = new Image();
         image.onerror = () => reject(new Error('Could not load the selected image.'));
         image.onload = () => {
-          const size = 192;
-          const canvas = document.createElement('canvas');
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, size, size);
-          const scale = Math.max(size / image.width, size / image.height);
-          const width = image.width * scale;
-          const height = image.height * scale;
-          ctx.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.78));
+          resolve(compressPlayerPhotoImage(image));
         };
         image.src = String(reader.result || '');
       };
@@ -4282,11 +5321,43 @@ const STORAGE_KEYS = {
     return normalized;
   }
 
+  function invalidatePlayerPhotoLookup() {
+    playerPhotoLookupCache = null;
+  }
+
+  function mergePlayerPhotoLookup(target, map) {
+    Object.entries(normalizePlayerPhotoMap(map || {})).forEach(([key, value]) => {
+      if (key && value && !target[key]) target[key] = value;
+    });
+  }
+
+  function buildPlayerPhotoLookup() {
+    const lookup = {};
+    mergePlayerPhotoLookup(lookup, getHomePlayerPhotos());
+    if (tournament?.playerPhotos) mergePlayerPhotoLookup(lookup, tournament.playerPhotos);
+    getAllSavedTournaments().forEach(saved => {
+      mergePlayerPhotoLookup(lookup, saved?.playerPhotos || {});
+    });
+    getIndex(STORAGE_KEYS.playerListsIndex).forEach(listId => {
+      const list = loadPlayerList(listId);
+      mergePlayerPhotoLookup(lookup, list?.playerPhotos || list?.photos || {});
+    });
+    return lookup;
+  }
+
+  function getPlayerPhotoLookup() {
+    if (!playerPhotoLookupCache) {
+      playerPhotoLookupCache = buildPlayerPhotoLookup();
+    }
+    return playerPhotoLookupCache;
+  }
+
   function getHomePlayerPhotos() {
     return normalizePlayerPhotoMap(safeJsonParse(localStorage.getItem(STORAGE_KEYS.homePlayerPhotos) || '{}', {}));
   }
 
   function setHomePlayerPhotos(photos) {
+    invalidatePlayerPhotoLookup();
     localStorage.setItem(STORAGE_KEYS.homePlayerPhotos, JSON.stringify(normalizePlayerPhotoMap(photos)));
   }
 
@@ -4440,6 +5511,7 @@ const STORAGE_KEYS = {
 
   function setActivePlayerPhotos(photos) {
     const nextPhotos = normalizePlayerPhotoMap(photos);
+    invalidatePlayerPhotoLookup();
     setHomePlayerPhotos(nextPhotos);
     if (tournament) {
       tournament.playerPhotos = nextPhotos;
@@ -4451,12 +5523,7 @@ const STORAGE_KEYS = {
     const key = playerPhotoKey(playerName);
     if (!key) return '';
     const tournamentPhotos = normalizePlayerPhotoMap(sourceTournament?.playerPhotos || {});
-    const homePhotos = getHomePlayerPhotos();
-    if (tournamentPhotos[key] || homePhotos[key]) return tournamentPhotos[key] || homePhotos[key];
-
-    const savedTournament = getAllSavedTournaments()
-      .find(saved => normalizePlayerPhotoMap(saved?.playerPhotos || {})[key]);
-    return savedTournament ? normalizePlayerPhotoMap(savedTournament.playerPhotos || {})[key] || '' : '';
+    return tournamentPhotos[key] || getPlayerPhotoLookup()[key] || '';
   }
 
   function setPlayerPhoto(playerName, dataUrl) {
@@ -4466,6 +5533,29 @@ const STORAGE_KEYS = {
     if (dataUrl) photos[key] = dataUrl;
     else delete photos[key];
     setActivePlayerPhotos(photos);
+  }
+
+  function isStoredPlayerPhotoFile(value) {
+    return typeof value === 'string' && /(^|\/)uploads\/player-photos\//.test(value);
+  }
+
+  async function saveUploadedPlayerPhoto(playerName, dataUrl) {
+    if (
+      document.documentElement.dataset.storageMode !== 'local' &&
+      window.btAuth?.authToken?.() &&
+      window.btAuth?.uploadPlayerPhoto
+    ) {
+      const uploaded = await window.btAuth.uploadPlayerPhoto(playerName, dataUrl);
+      if (uploaded?.url) return uploaded.url;
+    }
+    return dataUrl;
+  }
+
+  function deleteStoredPlayerPhoto(photoUrl, playerName) {
+    if (!isStoredPlayerPhotoFile(photoUrl) || !window.btAuth?.deletePlayerPhoto) return;
+    window.btAuth.deletePlayerPhoto(photoUrl, playerName).catch(error => {
+      console.warn('Could not delete player photo file:', error);
+    });
   }
 
   function getPlayersForTeamAssignment() {
@@ -4484,6 +5574,7 @@ const STORAGE_KEYS = {
       tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
       saveTournamentAndRefresh();
     }
+    if (currentView === 'pairing') renderTeamPairing();
   }
 
   function updateSavePlayerListBtnState() {
@@ -4554,6 +5645,7 @@ const STORAGE_KEYS = {
       players,
       playerPhotos: getActivePlayerPhotos(),
     }));
+    invalidatePlayerPhotoLookup();
     const idx = getIndex(STORAGE_KEYS.playerListsIndex);
     if (!idx.includes(listId)) idx.push(listId);
     idx.sort();
@@ -4564,6 +5656,15 @@ const STORAGE_KEYS = {
     const data = localStorage.getItem(STORAGE_KEYS.playerListPrefix + listId);
     if (!data) return null;
     return safeJsonParse(data, null);
+  }
+
+  function deletePlayerListById(listId) {
+    const cleanId = String(listId || '').trim();
+    if (!cleanId) return false;
+    localStorage.removeItem(STORAGE_KEYS.playerListPrefix + cleanId);
+    setIndex(STORAGE_KEYS.playerListsIndex, getIndex(STORAGE_KEYS.playerListsIndex).filter(id => id !== cleanId));
+    invalidatePlayerPhotoLookup();
+    return true;
   }
 
   function ownerSuffix(ownerUsername) {
@@ -4597,6 +5698,7 @@ const STORAGE_KEYS = {
       playerListSelect.appendChild(opt);
     });
     loadPlayerListBtn.disabled = !playerListSelect.value;
+    if (deletePlayerListBtn) deletePlayerListBtn.disabled = !playerListSelect.value;
   }
 
   // ----------------------------
@@ -4829,9 +5931,7 @@ const STORAGE_KEYS = {
     return index + 1;
   }
 
-  function renderGlobalLeaderboard(rows) {
-    finalLeaderboardOutput.innerHTML = '';
-    const period = selectedLeaderboardPeriod();
+  function getLeaderboardPeriodDetails(period = selectedLeaderboardPeriod()) {
     const periodDate = period === 'all' ? null : historyDateFromKey(`${period}-01`);
     const periodLabel = period === 'all'
       ? 'All Time'
@@ -4839,6 +5939,338 @@ const STORAGE_KEYS = {
         ? periodDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
         : period;
     const tournamentCount = getLeaderboardTournaments(period).length;
+    return { period, periodLabel, tournamentCount };
+  }
+
+  function drawCanvasRoundRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    ctx.lineTo(x + r, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function ellipsizeCanvasText(ctx, value, maxWidth) {
+    const text = String(value ?? '');
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let end = text.length;
+    while (end > 0 && ctx.measureText(`${text.slice(0, end)}...`).width > maxWidth) {
+      end -= 1;
+    }
+    return end > 0 ? `${text.slice(0, end)}...` : '...';
+  }
+
+  function drawWrappedCanvasText(ctx, value, x, y, maxWidth, lineHeight, maxLines = 2) {
+    const words = String(value ?? '').split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    words.forEach(word => {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width <= maxWidth || !line) {
+        line = test;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    });
+    if (line) lines.push(line);
+    const visible = lines.slice(0, maxLines);
+    if (lines.length > maxLines) {
+      visible[maxLines - 1] = ellipsizeCanvasText(ctx, visible[maxLines - 1], maxWidth);
+    }
+    visible.forEach((part, index) => ctx.fillText(part, x, y + (index * lineHeight)));
+  }
+
+  function loadImageForCanvas(src) {
+    return new Promise(resolve => {
+      if (!src) {
+        resolve(null);
+        return;
+      }
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      if (!String(src).startsWith('data:')) image.crossOrigin = 'anonymous';
+      image.src = src;
+    });
+  }
+
+  function drawLeaderboardAvatar(ctx, player, image, x, y, size) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    if (image) {
+      ctx.clip();
+      ctx.drawImage(image, x, y, size, size);
+    } else {
+      const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
+      gradient.addColorStop(0, '#ccfbf1');
+      gradient.addColorStop(1, '#f8fafc');
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.fillStyle = '#115e59';
+      ctx.font = '900 17px Inter, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(playerInitials(player), x + size / 2, y + size / 2 + 1);
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#d7e1df';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function drawLeaderboardRankBadge(ctx, index, x, y) {
+    if (index < 3) {
+      const colors = [
+        ['#f59e0b', '#78350f'],
+        ['#cbd5e1', '#334155'],
+        ['#fdba74', '#7c2d12'],
+      ];
+      ctx.fillStyle = colors[index][0];
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors[index][1];
+      ctx.font = '900 18px Inter, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(index + 1), x, y + 1);
+      return;
+    }
+    ctx.fillStyle = '#334155';
+    ctx.font = '800 22px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(index + 1), x, y);
+  }
+
+  function canvasToPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      if (canvas.toBlob) {
+        canvas.toBlob(blob => {
+          if (blob) resolve(blob);
+          else reject(new Error('Could not create the leaderboard image.'));
+        }, 'image/png', 1);
+        return;
+      }
+      fetch(canvas.toDataURL('image/png'))
+        .then(response => response.blob())
+        .then(resolve)
+        .catch(reject);
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function leaderboardShareFilename(details) {
+    const suffix = details.period === 'all' ? 'all-time' : details.period;
+    return `badminton-leaderboard-${suffix}.png`;
+  }
+
+  async function createLeaderboardShareBlob(rows) {
+    const visibleRows = Array.isArray(rows) && rows.length ? rows : computeGlobalLeaderboardRows();
+    if (!visibleRows.length) throw new Error('No leaderboard rows are available to share.');
+
+    const details = getLeaderboardPeriodDetails();
+    const width = 1400;
+    const margin = 48;
+    const headerHeight = 178;
+    const tableHeaderHeight = 58;
+    const rowHeight = 74;
+    const footerHeight = 58;
+    const height = headerHeight + tableHeaderHeight + (visibleRows.length * rowHeight) + footerHeight + 32;
+    const maxScaledHeight = 15000;
+    const scale = Math.min(2, Math.max(0.75, Math.min(window.devicePixelRatio || 2, maxScaledHeight / height)));
+
+    const photoEntries = await Promise.all(visibleRows.map(async row => {
+      const photo = getPlayerPhoto(row.player);
+      return [lower(row.player), await loadImageForCanvas(photo)];
+    }));
+    const imageByPlayer = new Map(photoEntries);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Your browser could not prepare the leaderboard image.');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#f4f7f6';
+    ctx.fillRect(0, 0, width, height);
+
+    const headerGradient = ctx.createLinearGradient(margin, 24, width - margin, headerHeight - 10);
+    headerGradient.addColorStop(0, '#115e59');
+    headerGradient.addColorStop(1, '#0f766e');
+    drawCanvasRoundRect(ctx, margin, 24, width - margin * 2, 130, 24);
+    ctx.fillStyle = headerGradient;
+    ctx.fill();
+
+    ctx.fillStyle = '#ecfeff';
+    ctx.font = '900 42px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Badminton Leaderboard', margin + 34, 80);
+    ctx.font = '700 22px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`${details.periodLabel} - ${details.tournamentCount} tournament${details.tournamentCount === 1 ? '' : 's'}`, margin + 34, 116);
+
+    const stamp = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    ctx.font = '600 16px Inter, Segoe UI, sans-serif';
+    ctx.fillStyle = 'rgba(236, 254, 255, 0.82)';
+    ctx.fillText(`Generated ${stamp}`, margin + 34, 142);
+
+    const tableX = margin;
+    const tableWidth = width - margin * 2;
+    const tableY = headerHeight;
+    const columns = [
+      { label: 'Rank', x: tableX, w: 96, align: 'center' },
+      { label: 'Player', x: tableX + 96, w: 494, align: 'left' },
+      { label: 'Points', x: tableX + 590, w: 150, align: 'center' },
+      { label: 'Titles', x: tableX + 740, w: 140, align: 'center' },
+      { label: 'Runner-up', x: tableX + 880, w: 154, align: 'center' },
+      { label: 'Games', x: tableX + 1034, w: 150, align: 'center' },
+      { label: 'Days', x: tableX + 1184, w: 120, align: 'center' },
+    ];
+
+    drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight + visibleRows.length * rowHeight, 18);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight, 18);
+    ctx.fillStyle = '#0f766e';
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 16px Inter, Segoe UI, sans-serif';
+    ctx.textBaseline = 'middle';
+    columns.forEach(column => {
+      ctx.textAlign = column.align === 'left' ? 'left' : 'center';
+      const textX = column.align === 'left' ? column.x + 18 : column.x + column.w / 2;
+      ctx.fillText(column.label.toUpperCase(), textX, tableY + tableHeaderHeight / 2 + 1);
+    });
+
+    visibleRows.forEach((row, index) => {
+      const y = tableY + tableHeaderHeight + index * rowHeight;
+      ctx.fillStyle = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+      if (index === 0) ctx.fillStyle = '#fffbeb';
+      if (index === 2) ctx.fillStyle = '#fff7ed';
+      ctx.fillRect(tableX, y, tableWidth, rowHeight);
+      ctx.strokeStyle = '#d7e1df';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tableX, y + rowHeight);
+      ctx.lineTo(tableX + tableWidth, y + rowHeight);
+      ctx.stroke();
+
+      drawLeaderboardRankBadge(ctx, index, columns[0].x + columns[0].w / 2, y + rowHeight / 2);
+      drawLeaderboardAvatar(ctx, row.player, imageByPlayer.get(lower(row.player)), columns[1].x + 18, y + 14, 46);
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#15201d';
+      ctx.font = '850 21px Inter, Segoe UI, sans-serif';
+      drawWrappedCanvasText(ctx, row.player, columns[1].x + 80, y + 32, columns[1].w - 102, 22, 2);
+
+      [row.totalPoints, row.winnerCount, row.runnerUpCount, row.gamesPlayed, row.daysPlayed].forEach((value, valueIndex) => {
+        const column = columns[valueIndex + 2];
+        ctx.fillStyle = valueIndex === 0 ? '#115e59' : '#334155';
+        ctx.font = valueIndex === 0 ? '900 24px Inter, Segoe UI, sans-serif' : '800 21px Inter, Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(value), column.x + column.w / 2, y + rowHeight / 2 + 1);
+      });
+    });
+
+    const footerY = tableY + tableHeaderHeight + visibleRows.length * rowHeight + 26;
+    ctx.fillStyle = '#64736f';
+    ctx.font = '700 18px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Badminton Tournament Manager', width / 2, footerY);
+
+    return canvasToPngBlob(canvas);
+  }
+
+  async function shareLeaderboardImage() {
+    const rows = computeGlobalLeaderboardRows();
+    if (!rows.length) {
+      setAuthStatus(leaderboardShareStatus, 'No leaderboard rows are available to share.', 'error');
+      return;
+    }
+
+    const details = getLeaderboardPeriodDetails();
+    const filename = leaderboardShareFilename(details);
+    const originalHtml = shareLeaderboardBtn?.innerHTML || '';
+    if (shareLeaderboardBtn) {
+      shareLeaderboardBtn.disabled = true;
+      shareLeaderboardBtn.innerHTML = '<span aria-hidden="true">&#9203;</span><span class="srOnly">Preparing share image</span>';
+    }
+    setAuthStatus(leaderboardShareStatus, 'Preparing high-quality leaderboard image...');
+
+    try {
+      const blob = await createLeaderboardShareBlob(rows);
+      const title = `Badminton Leaderboard - ${details.periodLabel}`;
+      const text = `${details.periodLabel} badminton leaderboard`;
+
+      if (typeof File !== 'undefined' && navigator.share && navigator.canShare) {
+        try {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ title, text, files: [file] });
+            setAuthStatus(leaderboardShareStatus, 'Leaderboard image opened in your share sheet.', 'success');
+            return;
+          }
+        } catch {
+          // Fall back to clipboard/download below.
+        }
+      }
+
+      if (window.isSecureContext && navigator.clipboard && window.ClipboardItem) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          setAuthStatus(leaderboardShareStatus, 'Leaderboard image copied. Paste it into WhatsApp or any chat.', 'success');
+          return;
+        } catch {
+          // Fall back to download below.
+        }
+      }
+
+      downloadBlob(blob, filename);
+      setAuthStatus(leaderboardShareStatus, 'Leaderboard image downloaded. Attach it in WhatsApp or any app.', 'success');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        setAuthStatus(leaderboardShareStatus, 'Share cancelled.');
+      } else {
+        setAuthStatus(leaderboardShareStatus, error?.message || 'Could not share the leaderboard image.', 'error');
+      }
+    } finally {
+      if (shareLeaderboardBtn) {
+        shareLeaderboardBtn.innerHTML = originalHtml;
+        shareLeaderboardBtn.disabled = computeGlobalLeaderboardRows().length === 0;
+      }
+    }
+  }
+
+  function renderGlobalLeaderboard(rows) {
+    finalLeaderboardOutput.innerHTML = '';
+    const { periodLabel, tournamentCount } = getLeaderboardPeriodDetails();
+    if (shareLeaderboardBtn) shareLeaderboardBtn.disabled = !rows || rows.length === 0;
     if (leaderboardPeriodSummary) {
       leaderboardPeriodSummary.textContent = `${periodLabel} · ${tournamentCount} tournament${tournamentCount === 1 ? '' : 's'} · Original points and ranking rules`;
     }
@@ -4850,7 +6282,8 @@ const STORAGE_KEYS = {
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const trh = document.createElement('tr');
-    ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Days Played'].forEach(h => {
+    const leaderboardHeaders = ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Days Played'];
+    leaderboardHeaders.forEach(h => {
       const th = document.createElement('th');
       th.scope = 'col';
       th.textContent = h;
@@ -4873,6 +6306,7 @@ const STORAGE_KEYS = {
       ];
       cells.forEach((c, cellIndex) => {
         const td = document.createElement('td');
+        td.dataset.label = leaderboardHeaders[cellIndex] || '';
         if (cellIndex === 1) {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -4909,6 +6343,10 @@ const STORAGE_KEYS = {
       Object.values(t.teamPlayers || {}).forEach(players => {
         (players || []).forEach(player => addKnownPlayerName(names, player));
       });
+      getAllScoredMatchesForStats(t).forEach(match => {
+        getMatchParticipantPlayersForStats(t, match.team1).forEach(player => addKnownPlayerName(names, player));
+        getMatchParticipantPlayersForStats(t, match.team2).forEach(player => addKnownPlayerName(names, player));
+      });
     });
     return [...names.values()].sort((a, b) => a.localeCompare(b));
   }
@@ -4917,8 +6355,44 @@ const STORAGE_KEYS = {
     return [...new Set([...(t?.teams || []), ...Object.keys(t?.teamPlayers || {})])];
   }
 
+  function uniqueNormalizedPlayerNames(players) {
+    const byKey = new Map();
+    (players || []).forEach(player => {
+      const normalized = normalizePlayerName(player);
+      const key = lower(normalized);
+      if (key && !byKey.has(key)) byKey.set(key, normalized);
+    });
+    return [...byKey.values()];
+  }
+
   function getTeamPlayersForStats(t, team) {
-    return (t?.teamPlayers?.[team] || []).map(normalizePlayerName).filter(Boolean);
+    return uniqueNormalizedPlayerNames(t?.teamPlayers?.[team] || []);
+  }
+
+  function splitParticipantPlayersForStats(value) {
+    const text = normalizePlayerName(value);
+    if (!text || isBotTeam(text) || /^team\s+\d+$/i.test(text)) return [];
+    return uniqueNormalizedPlayerNames(
+      text.split(/\s*(?:\/|\+|&|,)\s*/g).map(normalizePlayerName).filter(Boolean)
+    );
+  }
+
+  function getMatchParticipantPlayersForStats(t, participant) {
+    const text = normalizePlayerName(participant);
+    if (!text) return [];
+
+    const exactPlayers = getTeamPlayersForStats(t, text);
+    if (exactPlayers.length > 0) return exactPlayers;
+
+    const participantKey = lower(text);
+    const matchingTeam = getTournamentTeams(t).find(team => {
+      if (lower(normalizePlayerName(team)) === participantKey) return true;
+      if (lower(getHistoricalTeamDisplayName(t, team)) === participantKey) return true;
+      return lower(getTeamPlayersForStats(t, team).join(' / ')) === participantKey;
+    });
+    if (matchingTeam) return getTeamPlayersForStats(t, matchingTeam);
+
+    return splitParticipantPlayersForStats(text);
   }
 
   function getPlayerTeamsForStats(t, playerLower) {
@@ -4946,6 +6420,46 @@ const STORAGE_KEYS = {
     return matches;
   }
 
+  function getPlayerMatchSideForStats(t, match, playerLower, teamSet) {
+    const team1Players = getMatchParticipantPlayersForStats(t, match.team1);
+    const team2Players = getMatchParticipantPlayersForStats(t, match.team2);
+    const side1HasPlayer = team1Players.some(player => lower(player) === playerLower);
+    const side2HasPlayer = team2Players.some(player => lower(player) === playerLower);
+
+    if (side1HasPlayer && !side2HasPlayer) {
+      return {
+        playerTeam: match.team1,
+        opponentTeam: match.team2,
+        playerScore: Number(match.score1),
+        opponentScore: Number(match.score2),
+        playerPlayers: team1Players,
+        opponentPlayers: team2Players,
+      };
+    }
+    if (side2HasPlayer && !side1HasPlayer) {
+      return {
+        playerTeam: match.team2,
+        opponentTeam: match.team1,
+        playerScore: Number(match.score2),
+        opponentScore: Number(match.score1),
+        playerPlayers: team2Players,
+        opponentPlayers: team1Players,
+      };
+    }
+
+    const playerTeam = teamSet.has(match.team1) ? match.team1 : teamSet.has(match.team2) ? match.team2 : '';
+    if (!playerTeam) return null;
+    const playerIsTeam1 = playerTeam === match.team1;
+    return {
+      playerTeam,
+      opponentTeam: playerIsTeam1 ? match.team2 : match.team1,
+      playerScore: Number(playerIsTeam1 ? match.score1 : match.score2),
+      opponentScore: Number(playerIsTeam1 ? match.score2 : match.score1),
+      playerPlayers: getMatchParticipantPlayersForStats(t, playerTeam),
+      opponentPlayers: getMatchParticipantPlayersForStats(t, playerIsTeam1 ? match.team2 : match.team1),
+    };
+  }
+
   function getPlayerContributionForStats(t, playerLower) {
     const contributions = computeTournamentContribution(t) || {};
     return Object.values(contributions).find(row => lower(row.player) === playerLower) || null;
@@ -4961,14 +6475,161 @@ const STORAGE_KEYS = {
     map[normalized] = (map[normalized] || 0) + 1;
   }
 
+  function statsResultFromScore(playerScore, opponentScore) {
+    if (playerScore > opponentScore) return 'Win';
+    if (playerScore < opponentScore) return 'Loss';
+    return 'Tie';
+  }
+
+  function statsResultClass(result) {
+    if (result === 'Win') return 'win';
+    if (result === 'Loss') return 'loss';
+    return 'tie';
+  }
+
+  function getHistoricalParticipantDisplayName(t, participant) {
+    const players = getMatchParticipantPlayersForStats(t, participant);
+    if (players.length > 0) return players.join(' / ');
+    return getHistoricalTeamDisplayName(t, participant) || normalizePlayerName(participant) || '-';
+  }
+
+  function createStatsRelationDetail(name) {
+    return {
+      name,
+      matchesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      pointsFor: 0,
+      pointsAgainst: 0,
+      fixtures: [],
+      pairRecords: {},
+    };
+  }
+
+  function updateStatsRecordBucket(bucket, fixture) {
+    bucket.matchesPlayed += 1;
+    bucket.pointsFor += fixture.playerScore;
+    bucket.pointsAgainst += fixture.opponentScore;
+    if (fixture.result === 'Win') bucket.wins += 1;
+    else if (fixture.result === 'Loss') bucket.losses += 1;
+    else bucket.ties += 1;
+  }
+
+  function addStatsPairRecord(detail, pairName, fixture) {
+    const name = normalizePlayerName(pairName) || '-';
+    if (!detail.pairRecords[name]) {
+      detail.pairRecords[name] = {
+        name,
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+      };
+    }
+    updateStatsRecordBucket(detail.pairRecords[name], fixture);
+  }
+
+  function addStatsRelationMatch(map, relationName, fixture, pairName) {
+    const name = normalizePlayerName(relationName);
+    if (!name) return;
+    if (!map[name]) map[name] = createStatsRelationDetail(name);
+    updateStatsRecordBucket(map[name], fixture);
+    map[name].fixtures.push(fixture);
+    addStatsPairRecord(map[name], pairName, fixture);
+  }
+
+  function mergeStatsRelationDetail(target, detail) {
+    if (!detail?.name) return;
+    if (!target[detail.name]) target[detail.name] = createStatsRelationDetail(detail.name);
+    const existing = target[detail.name];
+    existing.matchesPlayed += detail.matchesPlayed || 0;
+    existing.wins += detail.wins || 0;
+    existing.losses += detail.losses || 0;
+    existing.ties += detail.ties || 0;
+    existing.pointsFor += detail.pointsFor || 0;
+    existing.pointsAgainst += detail.pointsAgainst || 0;
+    existing.fixtures.push(...(detail.fixtures || []));
+    Object.values(detail.pairRecords || {}).forEach(pair => {
+      if (!existing.pairRecords[pair.name]) {
+        existing.pairRecords[pair.name] = {
+          name: pair.name,
+          matchesPlayed: 0,
+          wins: 0,
+          losses: 0,
+          ties: 0,
+          pointsFor: 0,
+          pointsAgainst: 0,
+        };
+      }
+      const targetPair = existing.pairRecords[pair.name];
+      targetPair.matchesPlayed += pair.matchesPlayed || 0;
+      targetPair.wins += pair.wins || 0;
+      targetPair.losses += pair.losses || 0;
+      targetPair.ties += pair.ties || 0;
+      targetPair.pointsFor += pair.pointsFor || 0;
+      targetPair.pointsAgainst += pair.pointsAgainst || 0;
+    });
+  }
+
+  function statsWinRate(row) {
+    return row?.matchesPlayed ? Math.round(((row.wins || 0) / row.matchesPlayed) * 100) : 0;
+  }
+
+  function statsPointDiff(row) {
+    return (row?.pointsFor || 0) - (row?.pointsAgainst || 0);
+  }
+
+  function topStatsPairRecord(records) {
+    return Object.values(records || {})
+      .sort((a, b) =>
+        (b.matchesPlayed || 0) - (a.matchesPlayed || 0)
+        || (b.wins || 0) - (a.wins || 0)
+        || statsPointDiff(b) - statsPointDiff(a)
+        || a.name.localeCompare(b.name)
+      )[0] || null;
+  }
+
+  function createPlayerStatsFixture(t, match, side) {
+    const playerPlayers = uniqueNormalizedPlayerNames(side.playerPlayers || []);
+    const opponentPlayers = uniqueNormalizedPlayerNames(side.opponentPlayers || []);
+    const playerPair = playerPlayers.length ? playerPlayers.join(' / ') : getHistoricalParticipantDisplayName(t, side.playerTeam);
+    const opponentPair = opponentPlayers.length ? opponentPlayers.join(' / ') : getHistoricalParticipantDisplayName(t, side.opponentTeam);
+    const playerScore = Number(side.playerScore);
+    const opponentScore = Number(side.opponentScore);
+    return {
+      tournamentId: t.id,
+      tournamentName: t.name || 'Saved Tournament',
+      updatedAt: getTournamentEntryForStats(t.id)?.updatedAt || 0,
+      stage: match.stage || 'Match',
+      matchId: String(match.id || ''),
+      playerTeam: side.playerTeam,
+      opponentTeam: side.opponentTeam,
+      playerPlayers,
+      opponentPlayers,
+      playerPair,
+      opponentPair,
+      playerScore,
+      opponentScore,
+      score: `${playerScore}-${opponentScore}`,
+      result: statsResultFromScore(playerScore, opponentScore),
+    };
+  }
+
   function computePlayerTournamentStats(t, playerLower) {
     if (!t) return null;
 
     const teams = getPlayerTeamsForStats(t, playerLower);
-    const rostered = teams.length > 0 || (t.players || []).some(player => lower(normalizePlayerName(player)) === playerLower);
+    const teamSet = new Set(teams);
+    const scoredMatches = getAllScoredMatchesForStats(t);
+    const hasScoredMatch = scoredMatches.some(match => !!getPlayerMatchSideForStats(t, match, playerLower, teamSet));
+    const rostered = teams.length > 0
+      || (t.players || []).some(player => lower(normalizePlayerName(player)) === playerLower)
+      || hasScoredMatch;
     if (!rostered) return null;
 
-    const teamSet = new Set(teams);
     const finalResult = getHistoricalFinalResult(t);
     const contribution = getPlayerContributionForStats(t, playerLower);
     const summary = {
@@ -4987,34 +6648,39 @@ const STORAGE_KEYS = {
       runnerUps: contribution?.runnerUpCount || 0,
       teammates: {},
       opponents: {},
+      partnerDetails: {},
+      opponentDetails: {},
     };
 
-    teams.forEach(team => {
-      getTeamPlayersForStats(t, team).forEach(player => {
-        if (lower(player) !== playerLower) incrementCount(summary.teammates, player);
-      });
-    });
-
-    getAllScoredMatchesForStats(t).forEach(match => {
-      const playerTeam = teamSet.has(match.team1) ? match.team1 : teamSet.has(match.team2) ? match.team2 : '';
-      if (!playerTeam) return;
-
-      const opponentTeam = playerTeam === match.team1 ? match.team2 : match.team1;
-      const playerScore = Number(playerTeam === match.team1 ? match.score1 : match.score2);
-      const opponentScore = Number(playerTeam === match.team1 ? match.score2 : match.score1);
+    scoredMatches.forEach(match => {
+      const side = getPlayerMatchSideForStats(t, match, playerLower, teamSet);
+      if (!side) return;
+      const fixture = createPlayerStatsFixture(t, match, side);
 
       summary.matchesPlayed += 1;
-      summary.pointsFor += playerScore;
-      summary.pointsAgainst += opponentScore;
-      if (playerScore > opponentScore) summary.wins += 1;
-      else if (playerScore < opponentScore) summary.losses += 1;
+      summary.pointsFor += side.playerScore;
+      summary.pointsAgainst += side.opponentScore;
+      if (side.playerScore > side.opponentScore) summary.wins += 1;
+      else if (side.playerScore < side.opponentScore) summary.losses += 1;
       else summary.ties += 1;
 
-      const opponentPlayers = getTeamPlayersForStats(t, opponentTeam);
+      const opponentPlayers = uniqueNormalizedPlayerNames(side.opponentPlayers)
+        .filter(player => lower(player) !== playerLower);
+      const partnerPlayers = uniqueNormalizedPlayerNames(side.playerPlayers)
+        .filter(player => lower(player) !== playerLower);
+      partnerPlayers.forEach(player => {
+        incrementCount(summary.teammates, player);
+        addStatsRelationMatch(summary.partnerDetails, player, fixture, fixture.opponentPair);
+      });
       if (opponentPlayers.length > 0) {
-        opponentPlayers.forEach(player => incrementCount(summary.opponents, player));
+        opponentPlayers.forEach(player => {
+          incrementCount(summary.opponents, player);
+          addStatsRelationMatch(summary.opponentDetails, player, fixture, fixture.opponentPair);
+        });
       } else {
-        incrementCount(summary.opponents, opponentTeam);
+        const fallbackOpponent = getHistoricalParticipantDisplayName(t, side.opponentTeam);
+        incrementCount(summary.opponents, fallbackOpponent);
+        addStatsRelationMatch(summary.opponentDetails, fallbackOpponent, fixture, fixture.opponentPair);
       }
     });
 
@@ -5080,6 +6746,8 @@ const STORAGE_KEYS = {
       runnerUps: 0,
       teammates: {},
       opponents: {},
+      partnerDetails: {},
+      opponentDetails: {},
       tournaments: [],
       period,
     };
@@ -5104,6 +6772,8 @@ const STORAGE_KEYS = {
       stats.runnerUps += summary.runnerUps;
       Object.entries(summary.teammates).forEach(([name, count]) => { stats.teammates[name] = (stats.teammates[name] || 0) + count; });
       Object.entries(summary.opponents).forEach(([name, count]) => { stats.opponents[name] = (stats.opponents[name] || 0) + count; });
+      Object.values(summary.partnerDetails || {}).forEach(detail => mergeStatsRelationDetail(stats.partnerDetails, detail));
+      Object.values(summary.opponentDetails || {}).forEach(detail => mergeStatsRelationDetail(stats.opponentDetails, detail));
       stats.tournaments.push(summary);
     });
 
@@ -5122,6 +6792,175 @@ const STORAGE_KEYS = {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .slice(0, limit)
       .map(([name, count]) => [name, count]);
+  }
+
+  function formatStatsRecord(row) {
+    return formatRecord(row?.wins || 0, row?.losses || 0, row?.ties || 0);
+  }
+
+  function relationDetailForName(details, name) {
+    const key = lower(normalizePlayerName(name));
+    return Object.values(details || {}).find(detail => lower(detail.name) === key) || null;
+  }
+
+  function relationDetailRows(details) {
+    return Object.values(details || {})
+      .sort((a, b) =>
+        (b.matchesPlayed || 0) - (a.matchesPlayed || 0)
+        || (b.wins || 0) - (a.wins || 0)
+        || statsPointDiff(b) - statsPointDiff(a)
+        || a.name.localeCompare(b.name)
+      );
+  }
+
+  function appendRelationAnalyticsTable(parent, details, relationType) {
+    const rows = relationDetailRows(details);
+    if (!rows.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'playerRelationAnalytics';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const header = document.createElement('tr');
+    const pairLabel = 'Top Opponent Pair';
+    ['Name', 'Matches', 'Record', 'Win %', 'PF-PA', pairLabel].forEach(label => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      header.appendChild(th);
+    });
+    thead.appendChild(header);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach(row => {
+      const tr = document.createElement('tr');
+      const topPair = topStatsPairRecord(row.pairRecords);
+      [
+        row.name,
+        row.matchesPlayed,
+        formatStatsRecord(row),
+        `${statsWinRate(row)}%`,
+        `${row.pointsFor || 0}-${row.pointsAgainst || 0}`,
+        topPair ? `${topPair.name} (${topPair.matchesPlayed}, ${formatStatsRecord(topPair)})` : '-',
+      ].forEach(value => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    parent.appendChild(wrap);
+  }
+
+  function createFixtureDetailCard(fixture) {
+    const card = document.createElement('div');
+    card.className = 'playerFixtureCard';
+
+    const meta = document.createElement('div');
+    meta.className = 'playerFixtureMeta';
+    meta.textContent = `${fixture.tournamentName} | ${fixture.stage} ${fixture.matchId}`;
+
+    const teams = document.createElement('div');
+    teams.className = 'playerFixtureTeams';
+    const playerLine = document.createElement('div');
+    const playerLabel = document.createElement('strong');
+    playerLabel.textContent = 'With:';
+    playerLine.append(playerLabel, ` ${fixture.playerPair}`);
+    const opponentLine = document.createElement('div');
+    const opponentLabel = document.createElement('strong');
+    opponentLabel.textContent = 'Against:';
+    opponentLine.append(opponentLabel, ` ${fixture.opponentPair}`);
+    teams.append(playerLine, opponentLine);
+
+    const result = document.createElement('div');
+    result.className = 'playerFixtureResult';
+    const badge = document.createElement('span');
+    badge.className = `playerResultBadge ${statsResultClass(fixture.result)}`;
+    badge.textContent = fixture.result;
+    const score = document.createElement('span');
+    score.className = 'playerRelationRecord';
+    score.textContent = fixture.score;
+    result.append(badge, score);
+
+    card.append(meta, teams, result);
+    return card;
+  }
+
+  function renderPlayerRelationDetail(host, detail, relationType) {
+    host.innerHTML = '';
+    if (!detail) return;
+
+    const panel = document.createElement('div');
+    panel.className = 'playerRelationDetail';
+    const header = document.createElement('div');
+    header.className = 'playerRelationDetailHeader';
+    const titleBlock = document.createElement('div');
+    const title = document.createElement('h5');
+    title.textContent = relationType === 'partner'
+      ? `Fixtures with ${detail.name}`
+      : `Fixtures against ${detail.name}`;
+    titleBlock.appendChild(title);
+
+    const summary = document.createElement('div');
+    summary.className = 'playerRelationSummary';
+    [
+      `${detail.matchesPlayed} match${detail.matchesPlayed === 1 ? '' : 'es'}`,
+      `${formatStatsRecord(detail)} record`,
+      `${statsWinRate(detail)}% win`,
+      `${statsPointDiff(detail)} PD`,
+    ].forEach(text => {
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.textContent = text;
+      summary.appendChild(pill);
+    });
+    header.append(titleBlock, summary);
+    panel.appendChild(header);
+
+    const pairRows = relationDetailRows(detail.pairRecords);
+    if (pairRows.length) {
+      const analytics = document.createElement('div');
+      analytics.className = 'playerRelationAnalytics';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const trh = document.createElement('tr');
+      const pairHeading = 'Opponent Pair';
+      [pairHeading, 'Matches', 'Record', 'Win %'].forEach(label => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = label;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      pairRows.forEach(row => {
+        const tr = document.createElement('tr');
+        [row.name, row.matchesPlayed, formatStatsRecord(row), `${statsWinRate(row)}%`].forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      analytics.appendChild(table);
+      panel.appendChild(analytics);
+    }
+
+    const fixtures = [...(detail.fixtures || [])].sort((a, b) =>
+      (b.updatedAt || 0) - (a.updatedAt || 0)
+      || a.tournamentName.localeCompare(b.tournamentName)
+      || a.matchId.localeCompare(b.matchId, undefined, { numeric: true })
+    );
+    const fixtureList = document.createElement('div');
+    fixtureList.className = 'playerFixtureList';
+    fixtures.forEach(fixture => fixtureList.appendChild(createFixtureDetailCard(fixture)));
+    panel.appendChild(fixtureList);
+    host.appendChild(panel);
   }
 
   function appendStatCard(parent, label, value, tone = '') {
@@ -5156,7 +6995,7 @@ const STORAGE_KEYS = {
     return section;
   }
 
-  function appendPlayerRelationPanel(parent, title, rows, countLabel, emptyMessage) {
+  function appendPlayerRelationPanel(parent, title, rows, countLabel, emptyMessage, details = {}, relationType = 'partner') {
     const section = createPlayerStatsSection(title);
     if (!rows.length) {
       section.appendChild(createHistoryHint(emptyMessage));
@@ -5165,9 +7004,13 @@ const STORAGE_KEYS = {
     }
     const list = document.createElement('div');
     list.className = 'playerRelationList';
+    const detailHost = document.createElement('div');
     rows.forEach(([name, count], index) => {
-      const row = document.createElement('div');
+      const row = document.createElement('button');
+      row.type = 'button';
       row.className = 'playerRelationRow';
+      row.setAttribute('aria-expanded', 'false');
+      row.setAttribute('aria-label', `${title}: open fixtures for ${name}`);
       const rank = document.createElement('span');
       rank.className = 'playerRelationRank';
       rank.textContent = `#${index + 1}`;
@@ -5177,10 +7020,35 @@ const STORAGE_KEYS = {
       const total = document.createElement('span');
       total.className = 'playerRelationCount';
       total.textContent = `${count} ${countLabel}`;
-      row.append(rank, player, total);
+      const detail = relationDetailForName(details, name);
+      const record = document.createElement('span');
+      record.className = 'playerRelationRecord';
+      record.textContent = detail ? `${formatStatsRecord(detail)} | ${statsWinRate(detail)}%` : '';
+      const metric = document.createElement('span');
+      metric.style.display = 'grid';
+      metric.style.justifyItems = 'end';
+      metric.style.gap = '3px';
+      metric.append(total, record);
+      row.append(rank, player, metric);
+      row.addEventListener('click', () => {
+        const active = row.classList.contains('isActive');
+        list.querySelectorAll('.playerRelationRow').forEach(item => {
+          item.classList.remove('isActive');
+          item.setAttribute('aria-expanded', 'false');
+        });
+        if (active) {
+          detailHost.innerHTML = '';
+          return;
+        }
+        row.classList.add('isActive');
+        row.setAttribute('aria-expanded', 'true');
+        renderPlayerRelationDetail(detailHost, detail, relationType);
+      });
       list.appendChild(row);
     });
     section.appendChild(list);
+    appendRelationAnalyticsTable(section, details, relationType);
+    section.appendChild(detailHost);
     parent.appendChild(section);
   }
 
@@ -5322,8 +7190,8 @@ const STORAGE_KEYS = {
     split.className = 'playerStatsSplit';
     const partnerRows = topCountRows(stats.teammates, 8);
     const opponentRows = topCountRows(stats.opponents, 8);
-    appendPlayerRelationPanel(split, 'Most Common Partners', partnerRows, 'teams', 'No doubles partner data yet.');
-    appendPlayerRelationPanel(split, 'Most Faced Opponents', opponentRows, 'matches', 'No opponent data yet.');
+    appendPlayerRelationPanel(split, 'Most Common Partners', partnerRows, 'matches', 'No doubles partner data yet.', stats.partnerDetails, 'partner');
+    appendPlayerRelationPanel(split, 'Most Faced Opponents', opponentRows, 'matches', 'No opponent data yet.', stats.opponentDetails, 'opponent');
     playerStatsOutput.appendChild(split);
 
     const note = document.createElement('div');
@@ -5367,6 +7235,266 @@ const STORAGE_KEYS = {
 
     localStorage.setItem(STORAGE_KEYS.playerStatsPlayer, player);
     renderPlayerStatistics(computePlayerStatistics(player, period));
+  }
+
+  function getPairingMatchType() {
+    return document.querySelector('input[name="pairingMatchType"]:checked')?.value || 'Doubles';
+  }
+
+  function activePairingPlayers() {
+    return uniqueNormalizedPlayerNames(getActivePlayersList());
+  }
+
+  function getPairingSelectedPlayers() {
+    return [...document.querySelectorAll('.pairingPlayerCheckbox:checked')]
+      .map(input => normalizePlayerName(input.value))
+      .filter(Boolean);
+  }
+
+  function updatePairingSelectedCount() {
+    const selected = getPairingSelectedPlayers();
+    if (pairingSelectedCount) {
+      pairingSelectedCount.textContent = `${selected.length} selected`;
+    }
+    if (generatePairingBtn) generatePairingBtn.disabled = selected.length === 0;
+  }
+
+  function setPairingPlayersSelected(checked) {
+    document.querySelectorAll('.pairingPlayerCheckbox').forEach(input => {
+      input.checked = checked;
+    });
+    updatePairingSelectedCount();
+  }
+
+  function renderTeamPairing() {
+    if (!pairingPlayersList || !pairingOutput) return;
+    const players = activePairingPlayers();
+    const previous = new Set(getPairingSelectedPlayers().map(lower));
+    const shouldSelectAll = previous.size === 0;
+    pairingPlayersList.innerHTML = '';
+
+    if (pairingModeSummary) pairingModeSummary.textContent = getPairingMatchType();
+
+    if (players.length === 0) {
+      pairingPlayersList.appendChild(createHistoryHint('Load or create a player list first.'));
+      pairingOutput.innerHTML = '';
+      pairingOutput.appendChild(createHistoryHint('No players available for pairing.'));
+      updatePairingSelectedCount();
+      return;
+    }
+
+    players.forEach(player => {
+      const label = document.createElement('label');
+      label.className = 'pairingPlayerOption';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'pairingPlayerCheckbox';
+      checkbox.value = player;
+      checkbox.checked = shouldSelectAll || previous.has(lower(player));
+      checkbox.addEventListener('change', updatePairingSelectedCount);
+      label.append(checkbox, createTeamPlayerTile(player));
+      pairingPlayersList.appendChild(label);
+    });
+
+    pairingOutput.innerHTML = '';
+    pairingOutput.appendChild(createHistoryHint('Choose players and generate teams.'));
+    updatePairingSelectedCount();
+  }
+
+  function pairingStatsForPlayer(player, cache) {
+    const key = lower(player);
+    if (!cache.has(key)) cache.set(key, computePlayerStatistics(player, 'all'));
+    return cache.get(key);
+  }
+
+  function partnerCountFromStats(stats, partner) {
+    const key = lower(partner);
+    const row = Object.entries(stats?.teammates || {}).find(([name]) => lower(name) === key);
+    return row ? Number(row[1]) || 0 : 0;
+  }
+
+  function historicalPartnerCount(a, b, cache) {
+    const aStats = pairingStatsForPlayer(a, cache);
+    const bStats = pairingStatsForPlayer(b, cache);
+    return Math.max(partnerCountFromStats(aStats, b), partnerCountFromStats(bStats, a));
+  }
+
+  function totalPartnerHistory(player, cache) {
+    const stats = pairingStatsForPlayer(player, cache);
+    return Object.values(stats?.teammates || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+  }
+
+  function topCommonPartnerLabel(player, cache) {
+    const stats = pairingStatsForPlayer(player, cache);
+    const top = topCountRows(stats?.teammates || {}, 1)[0];
+    return top ? `${top[0]} (${top[1]})` : 'No history';
+  }
+
+  function createDoublesPairCandidate(a, b, cache) {
+    const historyCount = historicalPartnerCount(a, b, cache);
+    const aVolume = totalPartnerHistory(a, cache);
+    const bVolume = totalPartnerHistory(b, cache);
+    return {
+      players: [a, b],
+      historyCount,
+      score: historyCount * 100000 + Math.abs(aVolume - bVolume) * 10 + aVolume + bVolume,
+      meta: historyCount === 0
+        ? 'New pairing from saved statistics'
+        : `Previous together: ${historyCount} match${historyCount === 1 ? '' : 'es'}`,
+      commonPartners: [
+        `${a}: ${topCommonPartnerLabel(a, cache)}`,
+        `${b}: ${topCommonPartnerLabel(b, cache)}`,
+      ],
+    };
+  }
+
+  function solveEvenDoublesPairing(players, cache) {
+    const list = [...players];
+    if (list.length <= 1) return { score: 0, key: '', pairs: [] };
+    if (list.length > 16) return solveGreedyDoublesPairing(list, cache);
+
+    const memo = new Map();
+    const solve = (remaining) => {
+      if (remaining.length === 0) return { score: 0, key: '', pairs: [] };
+      const memoKey = remaining.join('||');
+      if (memo.has(memoKey)) return memo.get(memoKey);
+      const first = remaining[0];
+      let best = null;
+      for (let i = 1; i < remaining.length; i++) {
+        const second = remaining[i];
+        const pair = createDoublesPairCandidate(first, second, cache);
+        const next = remaining.filter((_, index) => index !== 0 && index !== i);
+        const solved = solve(next);
+        const candidate = {
+          score: pair.score + solved.score,
+          key: `${pair.players.join(' / ')}|${solved.key}`,
+          pairs: [pair, ...solved.pairs],
+        };
+        if (!best || candidate.score < best.score || (candidate.score === best.score && candidate.key.localeCompare(best.key) < 0)) {
+          best = candidate;
+        }
+      }
+      memo.set(memoKey, best);
+      return best;
+    };
+    return solve(list);
+  }
+
+  function solveGreedyDoublesPairing(players, cache) {
+    const candidates = [];
+    for (let i = 0; i < players.length; i++) {
+      for (let j = i + 1; j < players.length; j++) {
+        candidates.push(createDoublesPairCandidate(players[i], players[j], cache));
+      }
+    }
+    candidates.sort((a, b) => a.score - b.score || a.players.join(' / ').localeCompare(b.players.join(' / ')));
+    const used = new Set();
+    const pairs = [];
+    candidates.forEach(pair => {
+      const [a, b] = pair.players;
+      if (used.has(a) || used.has(b)) return;
+      used.add(a);
+      used.add(b);
+      pairs.push(pair);
+    });
+    return { score: pairs.reduce((sum, pair) => sum + pair.score, 0), key: '', pairs };
+  }
+
+  function generateSinglesPairing(players) {
+    return {
+      mode: 'Singles',
+      teams: players.map(player => ({
+        players: [player],
+        historyCount: 0,
+        meta: 'Singles entry',
+        commonPartners: [],
+      })),
+      waiting: [],
+    };
+  }
+
+  function generateDoublesPairing(players) {
+    const cache = new Map();
+    const list = [...players];
+    const waiting = [];
+    if (list.length % 2 === 1) {
+      const sitOut = [...list].sort((a, b) =>
+        totalPartnerHistory(b, cache) - totalPartnerHistory(a, cache)
+        || a.localeCompare(b)
+      )[0];
+      waiting.push(sitOut);
+      list.splice(list.indexOf(sitOut), 1);
+    }
+    const solved = solveEvenDoublesPairing(list, cache);
+    return {
+      mode: 'Doubles',
+      teams: solved.pairs,
+      waiting,
+    };
+  }
+
+  function renderPairingTeamCard(team, index, mode) {
+    const card = document.createElement('div');
+    card.className = 'pairingTeamCard';
+    const teamNo = document.createElement('div');
+    teamNo.className = 'pairingTeamNo';
+    teamNo.textContent = `Team ${index + 1}`;
+
+    const playersWrap = document.createElement('div');
+    playersWrap.className = 'pairingTeamPlayers';
+    team.players.forEach(player => playersWrap.appendChild(createTeamPlayerTile(player)));
+
+    const meta = document.createElement('div');
+    meta.className = 'pairingTeamMeta';
+    meta.textContent = mode === 'Doubles' && team.commonPartners?.length
+      ? `${team.meta} | Common reference: ${team.commonPartners.join('; ')}`
+      : team.meta;
+
+    card.append(teamNo, playersWrap, meta);
+    return card;
+  }
+
+  function renderPairingResult(result) {
+    pairingOutput.innerHTML = '';
+    const summary = document.createElement('div');
+    summary.className = 'teamPairingSummary';
+    [
+      `${result.mode}`,
+      `${result.teams.length} team${result.teams.length === 1 ? '' : 's'}`,
+      `${result.waiting.length} waiting`,
+    ].forEach(text => {
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.textContent = text;
+      summary.appendChild(pill);
+    });
+    pairingOutput.appendChild(summary);
+
+    if (result.teams.length === 0) {
+      pairingOutput.appendChild(createHistoryHint(result.mode === 'Doubles' ? 'Select at least two players.' : 'Select at least one player.'));
+    } else {
+      result.teams.forEach((team, index) => {
+        pairingOutput.appendChild(renderPairingTeamCard(team, index, result.mode));
+      });
+    }
+
+    if (result.waiting.length > 0) {
+      const waiting = document.createElement('div');
+      waiting.className = 'pairingWaitingList';
+      waiting.textContent = `Waiting: ${result.waiting.join(', ')}`;
+      pairingOutput.appendChild(waiting);
+    }
+  }
+
+  function generateTeamPairing() {
+    if (!pairingOutput) return;
+    const selected = uniqueNormalizedPlayerNames(getPairingSelectedPlayers());
+    const mode = getPairingMatchType();
+    if (pairingModeSummary) pairingModeSummary.textContent = mode;
+    const result = mode === 'Singles'
+      ? generateSinglesPairing(selected)
+      : generateDoublesPairing(selected);
+    renderPairingResult(result);
   }
 
 
@@ -5503,8 +7631,18 @@ const STORAGE_KEYS = {
       || match.score2 !== null && match.score2 !== undefined
     ));
 
-    if (t?.finalMatch && !matches.some(match => match.id === t.finalMatch.id)) {
-      matches.push(t.finalMatch);
+    if (t?.finalMatch) {
+      const existingIndex = matches.findIndex(match => String(match.id || '') === String(t.finalMatch.id || ''));
+      if (existingIndex === -1) {
+        matches.push(t.finalMatch);
+      } else {
+        const existing = matches[existingIndex];
+        const finalHasScores = hasNumericScore(t.finalMatch.score1) && hasNumericScore(t.finalMatch.score2);
+        const existingHasScores = hasNumericScore(existing.score1) && hasNumericScore(existing.score2);
+        if (finalHasScores && !existingHasScores) {
+          matches[existingIndex] = t.finalMatch;
+        }
+      }
     }
     return matches;
   }
@@ -5812,9 +7950,27 @@ const STORAGE_KEYS = {
       return;
     }
 
+    const table = document.createElement('table');
+    table.className = 'playersTable';
+    const caption = document.createElement('caption');
+    caption.className = 'srOnly';
+    caption.textContent = 'Player roster management';
+    table.appendChild(caption);
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['Photo', 'Player Name', 'Actions'].forEach(label => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+
     players.forEach((player, idx) => {
-      const row = document.createElement('article');
-      row.className = 'playerCard';
+      const row = document.createElement('tr');
+      row.className = 'playerTableRow';
 
       const avatar = document.createElement('div');
       avatar.className = 'playerAvatar';
@@ -5827,6 +7983,8 @@ const STORAGE_KEYS = {
       } else {
         avatar.textContent = playerInitials(player);
       }
+      const avatarCell = document.createElement('td');
+      avatarCell.appendChild(avatar);
 
       const body = document.createElement('div');
       body.className = 'playerCardBody';
@@ -5898,7 +8056,12 @@ const STORAGE_KEYS = {
         if (!file) return;
         try {
           const dataUrl = await readPlayerPhotoFile(file);
-          setPlayerPhoto(player, dataUrl);
+          const previousPhoto = getPlayerPhoto(player);
+          const storedPhoto = await saveUploadedPlayerPhoto(player, dataUrl);
+          if (storedPhoto !== previousPhoto) {
+            deleteStoredPlayerPhoto(previousPhoto, player);
+          }
+          setPlayerPhoto(player, storedPhoto);
           renderPlayersList();
           renderTeamsPreview();
           recalcAndRender();
@@ -5924,6 +8087,7 @@ const STORAGE_KEYS = {
       clearPhoto.title = 'Clear photo';
       clearPhoto.disabled = !photo;
       clearPhoto.addEventListener('click', () => {
+        deleteStoredPlayerPhoto(getPlayerPhoto(player), player);
         setPlayerPhoto(player, '');
         renderPlayersList();
         recalcAndRender();
@@ -5939,6 +8103,8 @@ const STORAGE_KEYS = {
         const list = [...getActivePlayersList()];
         list.splice(idx, 1);
         const photos = getActivePlayerPhotos();
+        const photoToDelete = photos[playerPhotoKey(player)] || getPlayerPhoto(player);
+        deleteStoredPlayerPhoto(photoToDelete, player);
         delete photos[playerPhotoKey(player)];
         setActivePlayerPhotos(photos);
         setActivePlayersList(list);
@@ -5956,9 +8122,16 @@ const STORAGE_KEYS = {
 
       actions.append(commitEdit, uploadLabel, upload, clearPhoto, del);
       body.append(displayName, nameInput);
-      row.append(avatar, body, actions);
-      playersListDiv.appendChild(row);
+      const nameCell = document.createElement('td');
+      nameCell.appendChild(body);
+      const actionsCell = document.createElement('td');
+      actionsCell.appendChild(actions);
+      row.append(avatarCell, nameCell, actionsCell);
+      tbody.appendChild(row);
     });
+
+    table.appendChild(tbody);
+    playersListDiv.appendChild(table);
   }
 
   function renamePlayerAtIndex(index, nextName) {
@@ -6360,6 +8533,9 @@ const STORAGE_KEYS = {
       refreshPlayerStatsPeriodControls();
       refreshPlayerStatsSelect();
       renderSelectedPlayerStats();
+    }
+    if (currentView === 'pairing') {
+      renderTeamPairing();
     }
   }
 
@@ -6821,7 +8997,6 @@ const STORAGE_KEYS = {
     syncScheduleScoreInput(match.id, teamSide, teamScoreInput.value);
     syncScheduleScoreInput(match.id, opponentSide, opponentScoreInput.value);
     saveTournament();
-    scheduleScoreRender();
   }
 
   function createPointsFixtureDetailRow(team, columnCount) {
@@ -6881,9 +9056,9 @@ const STORAGE_KEYS = {
       const matchCell = document.createElement('td');
       matchCell.textContent = match.id;
       const teamCell = document.createElement('td');
-      appendTeamPhotoDisplay(teamCell, team, { compact: true });
+      teamCell.textContent = getTeamDisplayName(team);
       const opponentCell = document.createElement('td');
-      appendTeamPhotoDisplay(opponentCell, teamIsFirst ? match.team2 : match.team1, { compact: true });
+      opponentCell.textContent = getTeamDisplayName(teamIsFirst ? match.team2 : match.team1);
 
       const teamScoreCell = document.createElement('td');
       const teamScoreInput = document.createElement('input');
@@ -6920,6 +9095,8 @@ const STORAGE_KEYS = {
       opponentScoreInput.addEventListener('input', () => {
         autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput);
       });
+      teamScoreInput.addEventListener('change', scheduleScoreRender);
+      opponentScoreInput.addEventListener('change', scheduleScoreRender);
 
       row.append(matchCell, teamCell, teamScoreCell, opponentScoreCell, opponentCell);
       tbody.appendChild(row);
@@ -6982,7 +9159,7 @@ const STORAGE_KEYS = {
             const teamButton = document.createElement('button');
             teamButton.type = 'button';
             teamButton.className = 'pointsTeamButton';
-            teamButton.appendChild(createTeamPhotoDisplay(s.team, { compact: true }));
+            teamButton.textContent = c;
             teamButton.setAttribute('aria-expanded', String(expandedPointsTeam === s.team));
             teamButton.setAttribute('aria-label', `${expandedPointsTeam === s.team ? 'Hide' : 'Show'} fixtures for ${c}`);
             teamButton.title = 'Show this team\'s fixtures and enter scores';
@@ -7134,15 +9311,17 @@ const STORAGE_KEYS = {
           i1.addEventListener('change', () => onScoreInput(m.id, 1, i1.value));
         } else {
           i1.addEventListener('input', () => {
-            onScoreInput(m.id, 1, i1.value);
+            onScoreDraftInput(m.id, 1, i1.value);
             focusSecondScoreWhenReady();
           });
+          i1.addEventListener('change', () => onScoreInput(m.id, 1, i1.value));
         }
         if (tournament?.type === "Knockout") {
           i2.addEventListener('input', () => onScoreDraftInput(m.id, 2, i2.value));
           i2.addEventListener('change', () => onScoreInput(m.id, 2, i2.value));
         } else {
-          i2.addEventListener('input', () => onScoreInput(m.id, 2, i2.value));
+          i2.addEventListener('input', () => onScoreDraftInput(m.id, 2, i2.value));
+          i2.addEventListener('change', () => onScoreInput(m.id, 2, i2.value));
         }
         tdS2.appendChild(i2);
         tr.appendChild(tdS2);
@@ -8048,6 +10227,20 @@ function renderFinalSummary(finalMatch) {
 
   playerListSelect.addEventListener('change', () => {
     loadPlayerListBtn.disabled = !playerListSelect.value;
+    if (deletePlayerListBtn) deletePlayerListBtn.disabled = !playerListSelect.value;
+  });
+
+  pairingSelectAllBtn?.addEventListener('click', () => setPairingPlayersSelected(true));
+  pairingClearBtn?.addEventListener('click', () => setPairingPlayersSelected(false));
+  generatePairingBtn?.addEventListener('click', generateTeamPairing);
+  document.querySelectorAll('input[name="pairingMatchType"]').forEach(input => {
+    input.addEventListener('change', () => {
+      if (pairingModeSummary) pairingModeSummary.textContent = getPairingMatchType();
+      if (currentView === 'pairing') {
+        pairingOutput.innerHTML = '';
+        pairingOutput.appendChild(createHistoryHint('Choose players and generate teams.'));
+      }
+    });
   });
 
   if (playerStatsSelect) {
@@ -8086,6 +10279,7 @@ function renderFinalSummary(finalMatch) {
   };
   leaderboardYearSelect?.addEventListener('change', updateMonthlyLeaderboardSelection);
   leaderboardMonthSelect?.addEventListener('change', updateMonthlyLeaderboardSelection);
+  shareLeaderboardBtn?.addEventListener('click', shareLeaderboardImage);
 
   if (historyTournamentSelect) {
     historyTournamentSelect.addEventListener('change', () => {
@@ -8164,6 +10358,32 @@ function renderFinalSummary(finalMatch) {
     alert('Player list saved.');
   });
 
+  deletePlayerListBtn?.addEventListener('click', () => {
+    const listId = playerListSelect.value;
+    if (!listId) return;
+    const list = loadPlayerList(listId);
+    const listName = list?.name || listId;
+    if (!confirm(`Delete player list "${listName}"? This cannot be undone.`)) return;
+    deletePlayerListById(listId);
+    playerListSelect.value = '';
+    refreshHomeDropdowns();
+    setBulkPlayersPanelOpen(false);
+    setPlayerAddPanelOpen(false);
+    alert('Player list deleted.');
+  });
+
+  const setPlayerAddPanelOpen = (open) => {
+    if (!playerAddPanel || !toggleAddPlayerBtn) return;
+    playerAddPanel.hidden = !open;
+    toggleAddPlayerBtn.setAttribute('aria-expanded', String(open));
+    toggleAddPlayerBtn.title = open ? 'Hide new-player entry' : 'Add new player';
+    toggleAddPlayerBtn.setAttribute('aria-label', open ? 'Hide new-player entry' : 'Add new player');
+    if (open) {
+      setBulkPlayersPanelOpen(false);
+      window.requestAnimationFrame(() => newPlayerNameInput?.focus());
+    }
+  };
+
   const setBulkPlayersPanelOpen = (open) => {
     if (!bulkPlayersPanel || !toggleBulkPlayersBtn) return;
     bulkPlayersPanel.hidden = !open;
@@ -8171,9 +10391,14 @@ function renderFinalSummary(finalMatch) {
     toggleBulkPlayersBtn.title = open ? 'Hide many-player entry' : 'Add many players';
     toggleBulkPlayersBtn.setAttribute('aria-label', open ? 'Hide many-player entry' : 'Add many players');
     if (open) {
+      setPlayerAddPanelOpen(false);
       window.requestAnimationFrame(() => bulkPlayersInput?.focus());
     }
   };
+
+  toggleAddPlayerBtn?.addEventListener('click', () => {
+    setPlayerAddPanelOpen(!!playerAddPanel?.hidden);
+  });
 
   toggleBulkPlayersBtn?.addEventListener('click', () => {
     setBulkPlayersPanelOpen(!!bulkPlayersPanel?.hidden);
@@ -8195,6 +10420,7 @@ function renderFinalSummary(finalMatch) {
     setActivePlayersList(players);
     newPlayerNameInput.value = '';
     addPlayerBtn.disabled = true;
+    setPlayerAddPanelOpen(false);
     updateSavePlayerListBtnState();
     renderPlayersList();
     if (tournament) {

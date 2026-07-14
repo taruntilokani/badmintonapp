@@ -56,6 +56,8 @@ The app uses write-through sync: tournament, player-list, score, and setting cha
 
 When loading a tournament, the API also repairs the exported tournament payload from `bt_tournament_matches` if the tournament snapshot is missing match/schedule rows. This keeps the schedule recoverable from the normalized match table.
 
+Player photos are optimized as small avatar files and saved under `uploads/player-photos/<username>/`. The app stores the photo URL in the player list/tournament data, which keeps login and database loading faster than storing large base64 images in MySQL. Upload the `uploads` folder structure with the app; the actual player image files are created on the server and are ignored by git.
+
 ## Files To Upload
 
 Upload these files to your InfinityFree site root, usually `htdocs`:
@@ -67,6 +69,7 @@ api.php
 database.php
 db-config.php
 bs-optimized.png
+uploads/
 health.php
 diagnose.php
 VERSION.txt

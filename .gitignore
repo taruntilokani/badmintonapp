@@ -2,3 +2,7 @@ storage/app-state.php
 storage/sessions.php
 storage/users.php
 db-config.php
+uploads/player-photos/*
+!uploads/player-photos/.gitkeep
+!uploads/player-photos/.htaccess
+!uploads/player-photos/index.html
