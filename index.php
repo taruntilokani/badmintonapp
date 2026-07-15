@@ -303,47 +303,22 @@ header('Expires: 0');
       background: #ffffff;
     }
 
-    #sessionBar {
-      position: fixed;
-      top: max(10px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
-      z-index: 70;
-      width: auto;
-      padding: 0;
-      margin: 0;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      overflow: visible;
-    }
-
-    .accountBar {
-      display: flex;
-      justify-content: flex-end;
-      width: 100%;
-    }
-
-    .accountPill {
+    .navAccountBar {
       display: inline-flex;
       align-items: center;
       justify-content: flex-end;
       gap: 6px;
+      flex: 0 0 auto;
       min-width: 0;
+      margin-left: auto;
       padding: 5px 5px 5px 10px;
       border: 1px solid var(--border);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .accountLabel {
-      display: none;
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .accountName {
-      max-width: 150px;
+      max-width: 130px;
       color: var(--text);
       font-size: 12px;
       font-weight: 800;
@@ -353,6 +328,7 @@ header('Expires: 0');
     }
 
     #sessionLogoutBtn {
+      flex: 0 0 30px !important;
       width: 30px !important;
       min-width: 30px !important;
       height: 30px !important;
@@ -363,7 +339,17 @@ header('Expires: 0');
       color: var(--danger);
       border-color: var(--border);
       font-size: 17px;
+      font-weight: 800;
       line-height: 1;
+      box-shadow: none;
+      text-transform: none;
+    }
+
+    .bottomNav #sessionLogoutBtn:hover:not(:disabled) {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: var(--danger);
+      transform: none;
       box-shadow: none;
     }
 
@@ -1025,12 +1011,9 @@ header('Expires: 0');
         padding: 11px;
       }
 
-      .accountBar {
-        justify-content: stretch;
-      }
-
-      .accountPill {
+      .navAccountBar {
         width: 100%;
+        margin-left: 0;
         border-radius: 10px;
       }
 
@@ -2634,6 +2617,13 @@ header('Expires: 0');
         border-color: transparent;
         box-shadow: inset 3px 0 0 var(--primary);
       }
+
+      .navAccountBar {
+        width: 100%;
+        margin: 6px 0 0;
+        padding-top: 8px;
+        border-top-color: var(--border);
+      }
     }
 
     @media (max-width: 600px) {
@@ -3173,11 +3163,7 @@ header('Expires: 0');
         margin-top: 0;
       }
 
-      .accountBar {
-        justify-content: flex-end;
-      }
-
-      .accountPill {
+      .navAccountBar {
         width: auto;
         border-radius: 999px;
       }
@@ -3673,7 +3659,7 @@ header('Expires: 0');
     }
 
     @media (max-width: 430px) {
-      .accountPill {
+      .navAccountBar {
         display: inline-flex;
         gap: 6px;
       }
@@ -4365,17 +4351,6 @@ header('Expires: 0');
 
 <h1 id="pageTitle">Badminton Tournament Manager</h1>
 <div class="subTitle">Run tournaments, scoring, standings, finals, and history from one organized workspace.</div>
-<div class="section hidden" id="sessionBar">
-  <div class="accountBar">
-    <div class="accountPill">
-      <span class="accountLabel">Signed in</span>
-      <span class="accountName" id="signedInUser">-</span>
-      <button id="sessionLogoutBtn" class="secondary" type="button" aria-label="Logout" title="Logout">&#9211;</button>
-    </div>
-  </div>
-</div>
-
-
 <div class="section hidden" id="authSection" aria-labelledby="authHeading">
   <div class="authBrandPanel">
     <div class="authIllustration" aria-hidden="true">
@@ -4425,6 +4400,10 @@ header('Expires: 0');
   <button id="tabHistory" class="bottomNavBtn" data-view="history" role="tab" aria-controls="viewHistory" aria-selected="false">History</button>
   <button id="tabPairing" class="bottomNavBtn" data-view="pairing" role="tab" aria-controls="viewPairing" aria-selected="false">Team Pairing</button>
   <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
+  <div class="navAccountBar hidden" id="sessionBar" aria-label="Account">
+    <span class="accountName" id="signedInUser">-</span>
+    <button id="sessionLogoutBtn" class="secondary" type="button" aria-label="Logout" title="Logout">&#9211;</button>
+  </div>
 </div>
 
 <!-- Unified, feature-based screens (one feature per tab) -->
@@ -4865,7 +4844,6 @@ header('Expires: 0');
       <div class="workspaceHeaderIcon" aria-hidden="true">&#9881;</div>
       <div><h3>Users</h3><div class="hint">Create accounts, manage access, and reset temporary passwords.</div></div>
     </div>
-    <button id="logoutBtn" class="secondary">Logout</button>
   </div>
 
   <div class="row workspacePanel" style="margin-top:18px;">
@@ -4983,7 +4961,7 @@ header('Expires: 0');
     <div id="historyCalendarGrid" class="historyCalendarGrid" role="grid" aria-label="Tournament history calendar"></div>
     <div id="historyCalendarStatus" class="historyCalendarStatus"></div>
   </div>
-  <div class="row workspacePanel">
+  <div class="row workspacePanel hidden" id="historyTournamentPanel" hidden>
     <div class="col">
       <label for="historyTournamentSelect">Tournaments on Selected Date</label>
       <select id="historyTournamentSelect">
@@ -4991,7 +4969,7 @@ header('Expires: 0');
       </select>
     </div>
   </div>
-  <div class="workspacePanel" id="historySchedulePanel">
+  <div class="workspacePanel hidden" id="historySchedulePanel" hidden>
     <div class="playerStatsSectionHeader">
       <h4>Schedule a Tournament</h4>
       <span class="pill" id="historyScheduleDateLabel">Select a date</span>
@@ -5008,7 +4986,7 @@ header('Expires: 0');
     </div>
     <div id="historyScheduleStatus" class="authStatus"></div>
   </div>
-  <div id="historyOutput" class="dataSurface"></div>
+  <div id="historyOutput" class="dataSurface hidden" hidden></div>
 </div>
 
 <script>
@@ -5140,6 +5118,7 @@ const STORAGE_KEYS = {
   const playerStatsMonthSelect = document.getElementById('playerStatsMonthSelect');
   const playerStatsPeriodSummary = document.getElementById('playerStatsPeriodSummary');
   const historyTournamentSelect = document.getElementById('historyTournamentSelect');
+  const historyTournamentPanel = document.getElementById('historyTournamentPanel');
   const historyOutput = document.getElementById('historyOutput');
   const historyCalendarGrid = document.getElementById('historyCalendarGrid');
   const historyCalendarMonth = document.getElementById('historyCalendarMonth');
@@ -5147,6 +5126,7 @@ const STORAGE_KEYS = {
   const historyPreviousMonthBtn = document.getElementById('historyPreviousMonthBtn');
   const historyNextMonthBtn = document.getElementById('historyNextMonthBtn');
   const historyScheduleDateLabel = document.getElementById('historyScheduleDateLabel');
+  const historySchedulePanel = document.getElementById('historySchedulePanel');
   const historyScheduledTournamentName = document.getElementById('historyScheduledTournamentName');
   const historyScheduleTournamentBtn = document.getElementById('historyScheduleTournamentBtn');
   const historyScheduleStatus = document.getElementById('historyScheduleStatus');
@@ -5178,6 +5158,7 @@ const STORAGE_KEYS = {
   // active view
   let currentView = 'tournament';
   let historyCalendarCursor = null;
+  let historyDateSelectionActive = false;
   let leaderboardControlsInitialized = false;
   let scoreRenderTimer = null;
   let playerPhotoLookupCache = null;
@@ -5354,8 +5335,7 @@ const STORAGE_KEYS = {
       renderSelectedPlayerStats();
     }
     if (view === 'history') {
-      refreshHistoryDropdown();
-      renderSelectedHistoryTournament();
+      showHistoryCalendarOnly();
     }
     if (view === 'teams') {
       renderTeamsPreview();
@@ -7718,6 +7698,14 @@ const STORAGE_KEYS = {
     return (row?.pointsFor || 0) - (row?.pointsAgainst || 0);
   }
 
+  function relationTournamentCount(detail) {
+    return new Set(
+      (detail?.fixtures || [])
+        .map(fixture => String(fixture?.tournamentId || '').trim())
+        .filter(Boolean)
+    ).size;
+  }
+
   function topStatsPairRecord(records) {
     return Object.values(records || {})
       .sort((a, b) =>
@@ -7972,7 +7960,7 @@ const STORAGE_KEYS = {
     const thead = document.createElement('thead');
     const header = document.createElement('tr');
     const pairLabel = 'Top Opponent Pair';
-    ['Name', 'Matches', 'Record', 'Win %', 'PF-PA', pairLabel].forEach(label => {
+    ['Name', 'Matches', 'Tournaments', 'Record', 'Win %', 'PF-PA', pairLabel].forEach(label => {
       const th = document.createElement('th');
       th.scope = 'col';
       th.textContent = label;
@@ -7988,6 +7976,7 @@ const STORAGE_KEYS = {
       [
         row.name,
         row.matchesPlayed,
+        relationTournamentCount(row),
         formatStatsRecord(row),
         `${statsWinRate(row)}%`,
         `${row.pointsFor || 0}-${row.pointsAgainst || 0}`,
@@ -8058,6 +8047,7 @@ const STORAGE_KEYS = {
     summary.className = 'playerRelationSummary';
     [
       `${detail.matchesPlayed} match${detail.matchesPlayed === 1 ? '' : 'es'}`,
+      `${relationTournamentCount(detail)} tournament${relationTournamentCount(detail) === 1 ? '' : 's'}`,
       `${formatStatsRecord(detail)} record`,
       `${statsWinRate(detail)}% win`,
       `${statsPointDiff(detail)} PD`,
@@ -8167,12 +8157,13 @@ const STORAGE_KEYS = {
       const player = document.createElement('div');
       player.className = 'playerRelationName';
       player.appendChild(createTeamPlayerTile(name));
+      const detail = relationDetailForName(details, name);
       const total = document.createElement('span');
       total.className = 'playerRelationCount';
+      const tournamentCount = relationTournamentCount(detail);
       total.textContent = relationType === 'partner'
-        ? `Paired ${count} time${count === 1 ? '' : 's'}`
-        : `Faced ${count} time${count === 1 ? '' : 's'}`;
-      const detail = relationDetailForName(details, name);
+        ? `Paired ${count} time${count === 1 ? '' : 's'} | ${tournamentCount} tournament${tournamentCount === 1 ? '' : 's'}`
+        : `Faced ${count} time${count === 1 ? '' : 's'} | ${tournamentCount} tournament${tournamentCount === 1 ? '' : 's'}`;
       const record = document.createElement('span');
       record.className = 'playerRelationRecord';
       record.textContent = detail ? `${formatStatsRecord(detail)} | ${statsWinRate(detail)}%` : '';
@@ -8958,6 +8949,37 @@ const STORAGE_KEYS = {
       .sort((a, b) => Number(b.createdAt || b.updatedAt || 0) - Number(a.createdAt || a.updatedAt || 0));
   }
 
+  function setHistoryElementHidden(el, hidden) {
+    if (!el) return;
+    el.classList.toggle('hidden', hidden);
+    el.hidden = hidden;
+  }
+
+  function showHistoryCalendarOnly() {
+    historyDateSelectionActive = false;
+    localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
+    if (historyTournamentSelect) {
+      historyTournamentSelect.value = '';
+      historyTournamentSelect.disabled = true;
+    }
+    if (historyOutput) historyOutput.innerHTML = '';
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
+    renderHistoryCalendar();
+  }
+
+  function selectHistoryDate(key) {
+    historyDateSelectionActive = true;
+    localStorage.setItem(STORAGE_KEYS.historyDate, key);
+    localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
+    if (historyTournamentSelect) historyTournamentSelect.value = '';
+    if (historyOutput) historyOutput.innerHTML = '';
+    setHistoryElementHidden(historyOutput, true);
+    if (historyScheduleStatus) setAuthStatus(historyScheduleStatus, '');
+    refreshHistoryDropdown();
+  }
+
   function ensureHistoryDateSelection(items) {
     let selectedDate = localStorage.getItem(STORAGE_KEYS.historyDate) || '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
@@ -8973,7 +8995,13 @@ const STORAGE_KEYS = {
 
   function renderHistoryCalendar(items = getHistoryTournamentItems()) {
     if (!historyCalendarGrid || !historyCalendarMonth) return;
-    const selectedDate = ensureHistoryDateSelection(items);
+    const selectedDate = historyDateSelectionActive ? ensureHistoryDateSelection(items) : '';
+    if (!historyCalendarCursor) {
+      const storedDate = historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate) || '')
+        || historyDateFromKey(historyTournamentDateKey(items[0]) || '')
+        || new Date();
+      historyCalendarCursor = new Date(storedDate.getFullYear(), storedDate.getMonth(), 1);
+    }
     const cursor = historyCalendarCursor || new Date();
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
@@ -9007,10 +9035,7 @@ const STORAGE_KEYS = {
       button.setAttribute('aria-label', `${date.toLocaleDateString()}${count ? `, ${count} tournament${count === 1 ? '' : 's'}` : ', no tournaments'}`);
       button.title = count ? `${count} tournament${count === 1 ? '' : 's'}` : 'No tournaments';
       button.addEventListener('click', () => {
-        localStorage.setItem(STORAGE_KEYS.historyDate, key);
-        if (historyScheduleStatus) setAuthStatus(historyScheduleStatus, '');
-        refreshHistoryDropdown();
-        renderSelectedHistoryTournament();
+        selectHistoryDate(key);
       });
       historyCalendarGrid.appendChild(button);
     }
@@ -9018,7 +9043,9 @@ const STORAGE_KEYS = {
     const selectedCount = counts.get(selectedDate) || 0;
     const selected = historyDateFromKey(selectedDate);
     if (historyCalendarStatus) {
-      historyCalendarStatus.textContent = selected
+      historyCalendarStatus.textContent = !historyDateSelectionActive
+        ? 'Select a date to view tournaments.'
+        : selected
         ? `${selectedCount} tournament${selectedCount === 1 ? '' : 's'} on ${selected.toLocaleDateString()}`
         : '';
     }
@@ -9027,6 +9054,10 @@ const STORAGE_KEYS = {
   function refreshHistoryDropdown() {
     if (!historyTournamentSelect) return;
     const items = getHistoryTournamentItems();
+    if (!historyDateSelectionActive) {
+      showHistoryCalendarOnly();
+      return;
+    }
     const selectedDate = ensureHistoryDateSelection(items);
     const selectedDateValue = historyDateFromKey(selectedDate);
     if (historyScheduleDateLabel) {
@@ -9036,7 +9067,7 @@ const STORAGE_KEYS = {
       historyScheduleTournamentBtn.disabled = !(selectedDate && historyScheduledTournamentName?.value.trim());
     }
     const filtered = items.filter(item => historyTournamentDateKey(item) === selectedDate);
-    const previous = historyTournamentSelect.value || localStorage.getItem(STORAGE_KEYS.historyTournamentId) || '';
+    const previous = localStorage.getItem(STORAGE_KEYS.historyTournamentId) || historyTournamentSelect.value || '';
     historyTournamentSelect.innerHTML = '<option value="">-- Select Tournament --</option>';
 
     filtered.forEach(item => {
@@ -9048,9 +9079,11 @@ const STORAGE_KEYS = {
       historyTournamentSelect.appendChild(option);
     });
 
-    const selected = filtered.some(item => item.id === previous) ? previous : (filtered[0]?.id || '');
+    const selected = filtered.some(item => item.id === previous) ? previous : '';
     historyTournamentSelect.value = selected;
     historyTournamentSelect.disabled = filtered.length === 0;
+    setHistoryElementHidden(historyTournamentPanel, false);
+    setHistoryElementHidden(historySchedulePanel, false);
     if (selected) localStorage.setItem(STORAGE_KEYS.historyTournamentId, selected);
     else localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
     renderHistoryCalendar(items);
@@ -9061,16 +9094,12 @@ const STORAGE_KEYS = {
     const id = historyTournamentSelect?.value || '';
     if (!id) {
       historyOutput.innerHTML = '';
-      const selectedDate = historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate) || '');
-      historyOutput.appendChild(createHistoryHint(
-        selectedDate
-          ? `No tournaments found on ${selectedDate.toLocaleDateString()}. Select another date in the calendar.`
-          : 'No saved tournaments yet.'
-      ));
+      setHistoryElementHidden(historyOutput, true);
       return;
     }
 
     localStorage.setItem(STORAGE_KEYS.historyTournamentId, id);
+    setHistoryElementHidden(historyOutput, false);
     renderTournamentHistory(loadTournamentById(id), getTournamentIndexEntry(id));
   }
 
@@ -9254,20 +9283,27 @@ const STORAGE_KEYS = {
       del.setAttribute('aria-label', `Remove ${player}`);
       del.title = `Remove ${player}`;
       del.addEventListener('click', () => {
+        const scheduleExists = hasGeneratedSchedule();
+        const keepTournamentAssignment = !!tournament && scheduleExists && isPlayerAssignedInTournament(player);
         const list = [...getActivePlayersList()];
         list.splice(idx, 1);
-        const photos = getActivePlayerPhotos();
-        delete photos[playerPhotoKey(player)];
-        setActivePlayerPhotos(photos);
+        if (!keepTournamentAssignment) {
+          const photos = getActivePlayerPhotos();
+          delete photos[playerPhotoKey(player)];
+          setActivePlayerPhotos(photos);
+        }
         setActivePlayersList(list);
+        if (tournament && !scheduleExists) {
+          removePlayerFromDraftTeamAssignments(player);
+        }
         updateSavePlayerListBtnState();
         renderPlayersList();
         if (tournament) {
-          tournament.teams = [];
-          tournament.teamPlayers = {};
-          teamsPreviewDiv.innerHTML = '';
-          updateGenerateScheduleBtn();
           updateBuildTeamsBtn();
+          updateGenerateScheduleBtn();
+          renderTeamsPreview();
+          renderGroupsAssignment();
+          if (scheduleExists) recalcAndRender();
           saveTournamentAndRefresh();
         }
       });
@@ -9355,6 +9391,94 @@ const STORAGE_KEYS = {
       }
     }
     return true;
+  }
+
+  function hasGeneratedSchedule(record = tournament) {
+    return Array.isArray(record?.matches) && record.matches.length > 0;
+  }
+
+  function requiredPlayersPerTeamForRecord(record = tournament) {
+    if (!record) return 0;
+    if (record.matchType === 'Singles') return 1;
+    if (record.matchType === 'Doubles') return 2;
+    return 1;
+  }
+
+  function collectTeamsFromTournamentSchedule(record = tournament) {
+    const teams = [];
+    const seen = new Set();
+    const addTeam = (team) => {
+      const name = String(team || '').trim();
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      teams.push(name);
+    };
+    (record?.matches || []).forEach(match => {
+      addTeam(match?.team1);
+      addTeam(match?.team2);
+    });
+    addTeam(record?.finalMatch?.team1);
+    addTeam(record?.finalMatch?.team2);
+    if (record?.knockout && typeof record.knockout === 'object') {
+      Object.values(record.knockout).forEach(match => {
+        addTeam(match?.team1);
+        addTeam(match?.team2);
+      });
+    }
+    return teams;
+  }
+
+  function ensureTournamentTeamsFromSchedule(record = tournament) {
+    if (!record || !hasGeneratedSchedule(record)) return false;
+    let changed = false;
+    let teams = Array.isArray(record.teams)
+      ? record.teams.map(team => String(team || '').trim()).filter(Boolean)
+      : [];
+    if (teams.length === 0) {
+      teams = collectTeamsFromTournamentSchedule(record);
+      if (teams.length > 0) {
+        record.teams = teams;
+        changed = true;
+      }
+    }
+    if (!teams.length) return changed;
+    if (!record.teamPlayers || typeof record.teamPlayers !== 'object') {
+      record.teamPlayers = {};
+      changed = true;
+    }
+    const req = requiredPlayersPerTeamForRecord(record);
+    teams.forEach(team => {
+      if (!Array.isArray(record.teamPlayers[team])) {
+        record.teamPlayers[team] = new Array(req).fill('');
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+  function isPlayerAssignedInTournament(playerName, record = tournament) {
+    const key = lower(normalizePlayerName(playerName));
+    if (!key || !record?.teamPlayers || typeof record.teamPlayers !== 'object') return false;
+    return Object.values(record.teamPlayers).some(players =>
+      (Array.isArray(players) ? players : []).some(player => lower(normalizePlayerName(player)) === key)
+    );
+  }
+
+  function removePlayerFromDraftTeamAssignments(playerName) {
+    if (!tournament?.teamPlayers || typeof tournament.teamPlayers !== 'object') return false;
+    const key = lower(normalizePlayerName(playerName));
+    if (!key) return false;
+    let changed = false;
+    Object.keys(tournament.teamPlayers).forEach(team => {
+      const players = Array.isArray(tournament.teamPlayers[team]) ? tournament.teamPlayers[team] : [];
+      const nextPlayers = players.map(player => {
+        if (lower(normalizePlayerName(player)) !== key) return player;
+        changed = true;
+        return '';
+      });
+      tournament.teamPlayers[team] = nextPlayers;
+    });
+    return changed;
   }
 
   function requiredPlayersPerTeam() {
@@ -9460,9 +9584,11 @@ const STORAGE_KEYS = {
       optEmpty.textContent = "-- Select --";
       sel.appendChild(optEmpty);
 
+      const availableNames = new Set();
       getPlayersForTeamAssignment().forEach(p => {
         const name = normalizePlayerName(p);
         if (!name) return;
+        availableNames.add(lower(name));
         const pickedByOther = taken.has(lower(name)) && lower(name) !== lower(current);
         if (pickedByOther) return;
 
@@ -9471,6 +9597,13 @@ const STORAGE_KEYS = {
         opt.textContent = name;
         sel.appendChild(opt);
       });
+
+      if (current && !availableNames.has(lower(current))) {
+        const optCurrent = document.createElement("option");
+        optCurrent.value = current;
+        optCurrent.textContent = current;
+        sel.appendChild(optCurrent);
+      }
 
       sel.value = current;
       sel.addEventListener("change", () => {
@@ -10697,6 +10830,7 @@ const STORAGE_KEYS = {
 
   function recalcAndRender() {
     if (!tournament) return;
+    ensureTournamentTeamsFromSchedule(tournament);
 
     if (tournament.type === "Knockout") {
       progressKnockoutBracket();
@@ -11169,13 +11303,17 @@ function renderFinalSummary(finalMatch) {
       ...t,
     };
     tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
+    const repairedTeams = ensureTournamentTeamsFromSchedule(tournament);
     expandedPointsTeam = null;
     tournamentEntryMode = 'load';
     localStorage.setItem(STORAGE_KEYS.activeTournamentId, id);
+    if (repairedTeams) saveTournament();
   }
 
   function bindTournamentToUI() {
     if (!tournament) return;
+    const repairedTeams = ensureTournamentTeamsFromSchedule(tournament);
+    if (repairedTeams) saveTournamentAndRefresh();
     currentTournamentNameEl.textContent = tournament.name;
 
     tournamentTypeSelect.value = tournament.type || '';
@@ -11475,12 +11613,20 @@ function renderFinalSummary(finalMatch) {
   historyPreviousMonthBtn?.addEventListener('click', () => {
     const cursor = historyCalendarCursor || historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate)) || new Date();
     historyCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+    historyDateSelectionActive = false;
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
     renderHistoryCalendar();
   });
 
   historyNextMonthBtn?.addEventListener('click', () => {
     const cursor = historyCalendarCursor || historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate)) || new Date();
     historyCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    historyDateSelectionActive = false;
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
     renderHistoryCalendar();
   });
 
