@@ -5519,6 +5519,268 @@ const STORAGE_KEYS = {
     }
   }
 
+  function replacePlayerNameInList(players, previousName, nextName) {
+    const previousKey = lower(previousName);
+    return (players || []).map(player =>
+      lower(normalizePlayerName(player)) === previousKey ? nextName : player
+    );
+  }
+
+  function replacePlayerNameInParticipant(value, previousName, nextName) {
+    const text = normalizePlayerName(value);
+    if (!text) return value;
+    const previousKey = lower(previousName);
+    if (lower(text) === previousKey) return nextName;
+    if (!/[\/+&,]/.test(text)) return value;
+
+    const parts = text.split(/\s*(?:\/|\+|&|,)\s*/g);
+    const replaced = parts.map(part =>
+      lower(normalizePlayerName(part)) === previousKey ? nextName : normalizePlayerName(part)
+    );
+    return replaced.join(' / ');
+  }
+
+  function migratePlayerPhotoMap(map, previousName, nextName = '', options = {}) {
+    const photos = normalizePlayerPhotoMap(map || {});
+    const previousKey = playerPhotoKey(previousName);
+    const nextKey = nextName ? playerPhotoKey(nextName) : '';
+    if (!previousKey) return photos;
+
+    if (options.clear) {
+      delete photos[previousKey];
+      if (nextKey) delete photos[nextKey];
+      return photos;
+    }
+
+    if (nextKey && photos[previousKey] && !photos[nextKey]) {
+      photos[nextKey] = photos[previousKey];
+    }
+    delete photos[previousKey];
+    return photos;
+  }
+
+  function migrateMatchParticipantNames(match, previousName, nextName) {
+    if (!match || typeof match !== 'object') return false;
+    let changed = false;
+    ['team1', 'team2'].forEach(key => {
+      const before = match[key];
+      const after = replacePlayerNameInParticipant(before, previousName, nextName);
+      if (after !== before) {
+        match[key] = after;
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+  function migrateTournamentPlayerName(record, previousName, nextName) {
+    if (!record || typeof record !== 'object') return false;
+    let changed = false;
+
+    if (Array.isArray(record.players)) {
+      const nextPlayers = replacePlayerNameInList(record.players, previousName, nextName);
+      changed = changed || JSON.stringify(nextPlayers) !== JSON.stringify(record.players);
+      record.players = nextPlayers;
+    }
+
+    if (record.teamPlayers && typeof record.teamPlayers === 'object') {
+      Object.keys(record.teamPlayers).forEach(team => {
+        const before = record.teamPlayers[team] || [];
+        const after = replacePlayerNameInList(before, previousName, nextName);
+        if (JSON.stringify(after) !== JSON.stringify(before)) changed = true;
+        record.teamPlayers[team] = after;
+      });
+    }
+
+    const beforePhotos = JSON.stringify(normalizePlayerPhotoMap(record.playerPhotos || {}));
+    record.playerPhotos = migratePlayerPhotoMap(record.playerPhotos || {}, previousName, nextName);
+    changed = changed || JSON.stringify(record.playerPhotos) !== beforePhotos;
+
+    (record.matches || []).forEach(match => {
+      changed = migrateMatchParticipantNames(match, previousName, nextName) || changed;
+    });
+    changed = migrateMatchParticipantNames(record.finalMatch, previousName, nextName) || changed;
+    if (record.knockout && typeof record.knockout === 'object') {
+      Object.values(record.knockout).forEach(match => {
+        changed = migrateMatchParticipantNames(match, previousName, nextName) || changed;
+      });
+    }
+    if (record.finalResult && typeof record.finalResult === 'object') {
+      ['winner', 'runnerUp'].forEach(key => {
+        const before = record.finalResult[key];
+        const after = replacePlayerNameInParticipant(before, previousName, nextName);
+        if (after !== before) {
+          record.finalResult[key] = after;
+          changed = true;
+        }
+      });
+    }
+
+    return changed;
+  }
+
+  function persistTournamentRecord(record) {
+    if (!record?.id) return;
+    localStorage.setItem(STORAGE_KEYS.tournamentPrefix + record.id, JSON.stringify(record));
+    if (tournament?.id === record.id) {
+      tournament = record;
+    }
+  }
+
+  function migratePlayerNameEverywhere(previousName, nextName) {
+    const cleanPrevious = normalizePlayerName(previousName);
+    const cleanNext = normalizePlayerName(nextName);
+    if (!cleanPrevious || !cleanNext || lower(cleanPrevious) === lower(cleanNext)) return false;
+    let changed = false;
+
+    const homePlayers = getHomePlayersDraft();
+    const nextHomePlayers = replacePlayerNameInList(homePlayers, cleanPrevious, cleanNext);
+    if (JSON.stringify(nextHomePlayers) !== JSON.stringify(homePlayers)) {
+      setHomePlayersDraft(nextHomePlayers);
+      changed = true;
+    }
+    const homePhotosBefore = JSON.stringify(getHomePlayerPhotos());
+    setHomePlayerPhotos(migratePlayerPhotoMap(getHomePlayerPhotos(), cleanPrevious, cleanNext));
+    changed = changed || JSON.stringify(getHomePlayerPhotos()) !== homePhotosBefore;
+
+    getIndex(STORAGE_KEYS.playerListsIndex).forEach(listId => {
+      const list = loadPlayerList(listId);
+      if (!list) return;
+      let listChanged = false;
+      const nextPlayers = replacePlayerNameInList(list.players || [], cleanPrevious, cleanNext);
+      if (JSON.stringify(nextPlayers) !== JSON.stringify(list.players || [])) {
+        list.players = nextPlayers;
+        listChanged = true;
+      }
+      const photoBefore = JSON.stringify(normalizePlayerPhotoMap(list.playerPhotos || list.photos || {}));
+      list.playerPhotos = migratePlayerPhotoMap(list.playerPhotos || list.photos || {}, cleanPrevious, cleanNext);
+      delete list.photos;
+      listChanged = listChanged || JSON.stringify(list.playerPhotos) !== photoBefore;
+      if (listChanged) {
+        localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify(list));
+        changed = true;
+      }
+    });
+
+    getIndex(STORAGE_KEYS.tournamentsIndex).forEach(item => {
+      const record = loadTournamentById(item.id);
+      if (!record) return;
+      if (migrateTournamentPlayerName(record, cleanPrevious, cleanNext)) {
+        persistTournamentRecord(record);
+        changed = true;
+      }
+    });
+
+    if (localStorage.getItem(STORAGE_KEYS.playerStatsPlayer) && lower(localStorage.getItem(STORAGE_KEYS.playerStatsPlayer)) === lower(cleanPrevious)) {
+      localStorage.setItem(STORAGE_KEYS.playerStatsPlayer, cleanNext);
+      changed = true;
+    }
+    localStorage.removeItem(STORAGE_KEYS.globalLeaderboard);
+    invalidatePlayerPhotoLookup();
+    return changed;
+  }
+
+  function clearPlayerPhotoEverywhere(playerName) {
+    const cleanName = normalizePlayerName(playerName);
+    const key = playerPhotoKey(cleanName);
+    if (!key) return false;
+    const photoToDelete = getPlayerPhoto(cleanName);
+    let changed = false;
+
+    const homeBefore = JSON.stringify(getHomePlayerPhotos());
+    setHomePlayerPhotos(migratePlayerPhotoMap(getHomePlayerPhotos(), cleanName, '', { clear: true }));
+    changed = changed || JSON.stringify(getHomePlayerPhotos()) !== homeBefore;
+
+    getIndex(STORAGE_KEYS.playerListsIndex).forEach(listId => {
+      const list = loadPlayerList(listId);
+      if (!list) return;
+      const before = JSON.stringify(normalizePlayerPhotoMap(list.playerPhotos || list.photos || {}));
+      list.playerPhotos = migratePlayerPhotoMap(list.playerPhotos || list.photos || {}, cleanName, '', { clear: true });
+      delete list.photos;
+      if (JSON.stringify(list.playerPhotos) !== before) {
+        localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify(list));
+        changed = true;
+      }
+    });
+
+    getIndex(STORAGE_KEYS.tournamentsIndex).forEach(item => {
+      const record = loadTournamentById(item.id);
+      if (!record) return;
+      const before = JSON.stringify(normalizePlayerPhotoMap(record.playerPhotos || {}));
+      record.playerPhotos = migratePlayerPhotoMap(record.playerPhotos || {}, cleanName, '', { clear: true });
+      if (JSON.stringify(record.playerPhotos) !== before) {
+        persistTournamentRecord(record);
+        changed = true;
+      }
+    });
+
+    if (photoToDelete) deleteStoredPlayerPhoto(photoToDelete, cleanName);
+    invalidatePlayerPhotoLookup();
+    return changed;
+  }
+
+  function storedPlayerPhotoIdentity(photoUrl) {
+    if (!isStoredPlayerPhotoFile(photoUrl)) return '';
+    try {
+      return new URL(photoUrl, window.location.href).pathname;
+    } catch {
+      return String(photoUrl || '').split(/[?#]/, 1)[0];
+    }
+  }
+
+  function sameStoredPlayerPhotoFile(a, b) {
+    const aPath = storedPlayerPhotoIdentity(a);
+    const bPath = storedPlayerPhotoIdentity(b);
+    return !!aPath && !!bPath && aPath === bPath;
+  }
+
+  function setPlayerPhotoEverywhere(playerName, photoUrl) {
+    const cleanName = normalizePlayerName(playerName);
+    const key = playerPhotoKey(cleanName);
+    if (!key) return false;
+    const nextPhoto = String(photoUrl || '').trim();
+    let changed = false;
+
+    const homePhotos = getHomePlayerPhotos();
+    if (nextPhoto) homePhotos[key] = nextPhoto;
+    else delete homePhotos[key];
+    setHomePlayerPhotos(homePhotos);
+    changed = true;
+
+    getIndex(STORAGE_KEYS.playerListsIndex).forEach(listId => {
+      const list = loadPlayerList(listId);
+      if (!list) return;
+      const listPlayers = (list.players || []).map(playerPhotoKey);
+      const existingPhotos = normalizePlayerPhotoMap(list.playerPhotos || list.photos || {});
+      if (!listPlayers.includes(key) && !existingPhotos[key]) return;
+      if (nextPhoto) existingPhotos[key] = nextPhoto;
+      else delete existingPhotos[key];
+      list.playerPhotos = existingPhotos;
+      delete list.photos;
+      localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify(list));
+      changed = true;
+    });
+
+    getIndex(STORAGE_KEYS.tournamentsIndex).forEach(item => {
+      const record = loadTournamentById(item.id);
+      if (!record) return;
+      const tournamentPlayers = [
+        ...(record.players || []),
+        ...Object.values(record.teamPlayers || {}).flat(),
+      ].map(playerPhotoKey);
+      const recordPhotos = normalizePlayerPhotoMap(record.playerPhotos || {});
+      if (!tournamentPlayers.includes(key) && !recordPhotos[key]) return;
+      if (nextPhoto) recordPhotos[key] = nextPhoto;
+      else delete recordPhotos[key];
+      record.playerPhotos = recordPhotos;
+      persistTournamentRecord(record);
+      changed = true;
+    });
+
+    invalidatePlayerPhotoLookup();
+    return changed;
+  }
+
   function getPlayerPhoto(playerName, sourceTournament = tournament) {
     const key = playerPhotoKey(playerName);
     if (!key) return '';
@@ -8058,10 +8320,10 @@ const STORAGE_KEYS = {
           const dataUrl = await readPlayerPhotoFile(file);
           const previousPhoto = getPlayerPhoto(player);
           const storedPhoto = await saveUploadedPlayerPhoto(player, dataUrl);
-          if (storedPhoto !== previousPhoto) {
+          setPlayerPhotoEverywhere(player, storedPhoto);
+          if (storedPhoto !== previousPhoto && !sameStoredPlayerPhotoFile(storedPhoto, previousPhoto)) {
             deleteStoredPlayerPhoto(previousPhoto, player);
           }
-          setPlayerPhoto(player, storedPhoto);
           renderPlayersList();
           renderTeamsPreview();
           recalcAndRender();
@@ -8087,9 +8349,9 @@ const STORAGE_KEYS = {
       clearPhoto.title = 'Clear photo';
       clearPhoto.disabled = !photo;
       clearPhoto.addEventListener('click', () => {
-        deleteStoredPlayerPhoto(getPlayerPhoto(player), player);
-        setPlayerPhoto(player, '');
+        clearPlayerPhotoEverywhere(player);
         renderPlayersList();
+        renderTeamsPreview();
         recalcAndRender();
       });
 
@@ -8149,29 +8411,26 @@ const STORAGE_KEYS = {
     }
     if (previousName === cleanName) return;
 
-    players[index] = cleanName;
-    const photos = getActivePlayerPhotos();
-    const previousKey = playerPhotoKey(previousName);
-    const nextKey = playerPhotoKey(cleanName);
-    if (photos[previousKey] && !photos[nextKey]) {
-      photos[nextKey] = photos[previousKey];
-    }
-    delete photos[previousKey];
-    setActivePlayerPhotos(photos);
-
-    if (tournament?.teamPlayers) {
-      Object.keys(tournament.teamPlayers).forEach(team => {
-        tournament.teamPlayers[team] = (tournament.teamPlayers[team] || []).map(player =>
-          lower(player) === lower(previousName) ? cleanName : player
-        );
-      });
-    }
-
-    setActivePlayersList(players);
+    migratePlayerNameEverywhere(previousName, cleanName);
     renderPlayersList();
     renderTeamsPreview();
     recalcAndRender();
     updateGenerateScheduleBtn();
+    refreshHomeDropdowns();
+    if (currentView === 'history') {
+      refreshHistoryDropdown();
+      renderSelectedHistoryTournament();
+    }
+    if (currentView === 'leaderboard') {
+      refreshLeaderboardPeriodControls();
+      renderGlobalLeaderboard(computeGlobalLeaderboardRows());
+    }
+    if (currentView === 'stats') {
+      refreshPlayerStatsPeriodControls();
+      refreshPlayerStatsSelect();
+      if (playerStatsSelect) playerStatsSelect.value = cleanName;
+      renderSelectedPlayerStats();
+    }
   }
 
   function validatePlayersUniqueness() {
