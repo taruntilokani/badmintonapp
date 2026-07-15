@@ -1669,7 +1669,7 @@ header('Expires: 0');
 
     .playerStatsSplit {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       margin-top: 12px;
     }
@@ -1833,6 +1833,39 @@ header('Expires: 0');
       white-space: normal;
       vertical-align: top;
       font-size: 12px;
+    }
+
+    .playerRelationCombinedTable tbody tr.isActive {
+      background: #f0fdfa;
+      outline: 2px solid #99f6e4;
+      outline-offset: -2px;
+    }
+
+    .playerRelationTablePlayer {
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      box-shadow: none;
+      text-align: left;
+      justify-content: flex-start;
+    }
+
+    .playerRelationTablePlayer:hover,
+    .playerRelationTablePlayer:focus {
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .playerRelationTableAction {
+      width: auto;
+      min-width: 54px;
+      min-height: 32px;
+      padding: 6px 9px;
+      font-size: 11px;
     }
 
     .playerResultBadge {
@@ -6390,7 +6423,7 @@ const STORAGE_KEYS = {
   // Each team accumulates:
   // - totalPoints: winner=10, runner-up=5, unqualified/non-playoff=2 per completed tournament
   // - winnerCount / runnerUpCount
-  // - gamesPlayed: total league/group matches played across tournaments
+  // - gamesPlayed: total scored matches played across schedule, qualifier, and final rounds
   // - daysPlayed: tournaments participated in (1 per tournament where team had >=1 match)
   // ----------------------------
   /**
@@ -6412,6 +6445,9 @@ const STORAGE_KEYS = {
         runnerUpCount: 0,
         gamesPlayed: 0,
         daysPlayed: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
       };
     }
     return board[key];
@@ -6443,14 +6479,48 @@ const STORAGE_KEYS = {
     return participants;
   }
 
+  function createLeaderboardPlayerResult() {
+    return {
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+    };
+  }
+
+  function computeLeaderboardPlayerResults(t) {
+    const results = new Map();
+    const addResult = (player, scoredFor, scoredAgainst) => {
+      const name = normalizePlayerName(player);
+      const key = lower(name);
+      if (!key) return;
+      if (!results.has(key)) results.set(key, createLeaderboardPlayerResult());
+      const row = results.get(key);
+      row.gamesPlayed += 1;
+      if (scoredFor > scoredAgainst) row.wins += 1;
+      else if (scoredFor < scoredAgainst) row.losses += 1;
+      else row.ties += 1;
+    };
+
+    getAllScoredMatchesForStats(t).forEach(match => {
+      const score1 = Number(match.score1);
+      const score2 = Number(match.score2);
+      getMatchParticipantPlayersForStats(t, match.team1).forEach(player => addResult(player, score1, score2));
+      getMatchParticipantPlayersForStats(t, match.team2).forEach(player => addResult(player, score2, score1));
+    });
+    return results;
+  }
+
+  function leaderboardWinRate(row) {
+    return row?.gamesPlayed ? Math.round(((row.wins || 0) / row.gamesPlayed) * 100) : 0;
+  }
+
   function computeTournamentContribution(t) {
     if (!t) return null;
 
     const teams = t.teams || [];
     const teamPlayers = t.teamPlayers || {};
-    const standings = computeStandingsFromMatches(teams, t.matches || []);
-
-    const playedMap = new Map(standings.map(s => [s.team, s.played]));
+    const playerResults = computeLeaderboardPlayerResults(t);
     const finalResult = t.finalResult || computeFinalResultFromFinalMatch(t.finalMatch);
     const playoffParticipants = getPlayoffParticipantTeams(t);
 
@@ -6460,15 +6530,15 @@ const STORAGE_KEYS = {
       const assigned = (teamPlayers[team] || []).map(normalizePlayerName).filter(Boolean);
       if (assigned.length === 0) return;
 
-      const gamesPlayed = playedMap.get(team) ?? 0;
-      const daysPlayed = gamesPlayed > 0 ? 1 : 0;
-
       const isWinner = finalResult?.winner === team;
       const isRunner = finalResult?.runnerUp === team;
-      const playedDayPoints = daysPlayed > 0 && !isWinner && !isRunner ? 2 : 0;
-      const totalPoints = (isWinner ? 10 : 0) + (isRunner ? 5 : 0) + playedDayPoints;
 
       assigned.forEach(player => {
+        const playerResult = playerResults.get(lower(player)) || createLeaderboardPlayerResult();
+        const gamesPlayed = playerResult.gamesPlayed || 0;
+        const daysPlayed = gamesPlayed > 0 ? 1 : 0;
+        const playedDayPoints = daysPlayed > 0 && !isWinner && !isRunner ? 2 : 0;
+        const totalPoints = (isWinner ? 10 : 0) + (isRunner ? 5 : 0) + playedDayPoints;
         if (!perPlayer[player]) {
           perPlayer[player] = {
             player,
@@ -6477,6 +6547,9 @@ const STORAGE_KEYS = {
             runnerUpCount: 0,
             gamesPlayed: 0,
             daysPlayed: 0,
+            wins: 0,
+            losses: 0,
+            ties: 0,
           };
         }
         perPlayer[player].totalPoints += totalPoints;
@@ -6484,6 +6557,9 @@ const STORAGE_KEYS = {
         perPlayer[player].runnerUpCount += isRunner ? 1 : 0;
         perPlayer[player].gamesPlayed += gamesPlayed;
         perPlayer[player].daysPlayed += daysPlayed;
+        perPlayer[player].wins += playerResult.wins || 0;
+        perPlayer[player].losses += playerResult.losses || 0;
+        perPlayer[player].ties += playerResult.ties || 0;
       });
     });
 
@@ -6504,6 +6580,9 @@ const STORAGE_KEYS = {
         r.runnerUpCount += row.runnerUpCount;
         r.gamesPlayed += row.gamesPlayed;
         r.daysPlayed += row.daysPlayed;
+        r.wins += row.wins || 0;
+        r.losses += row.losses || 0;
+        r.ties += row.ties || 0;
       });
     });
     return board;
@@ -6581,6 +6660,9 @@ const STORAGE_KEYS = {
         total.runnerUpCount += row.runnerUpCount;
         total.gamesPlayed += row.gamesPlayed;
         total.daysPlayed += row.daysPlayed;
+        total.wins += row.wins || 0;
+        total.losses += row.losses || 0;
+        total.ties += row.ties || 0;
       });
     });
     return Object.values(board).sort((a, b) => {
@@ -6825,13 +6907,14 @@ const STORAGE_KEYS = {
     const tableWidth = width - margin * 2;
     const tableY = headerHeight;
     const columns = [
-      { label: 'Rank', x: tableX, w: 96, align: 'center' },
-      { label: 'Player', x: tableX + 96, w: 494, align: 'left' },
-      { label: 'Points', x: tableX + 590, w: 150, align: 'center' },
-      { label: 'Titles', x: tableX + 740, w: 140, align: 'center' },
-      { label: 'Runner-up', x: tableX + 880, w: 154, align: 'center' },
-      { label: 'Games', x: tableX + 1034, w: 150, align: 'center' },
-      { label: 'Days', x: tableX + 1184, w: 120, align: 'center' },
+      { label: 'Rank', x: tableX, w: 88, align: 'center' },
+      { label: 'Player', x: tableX + 88, w: 400, align: 'left' },
+      { label: 'Points', x: tableX + 488, w: 136, align: 'center' },
+      { label: 'Titles', x: tableX + 624, w: 130, align: 'center' },
+      { label: 'Runner-up', x: tableX + 754, w: 154, align: 'center' },
+      { label: 'Games', x: tableX + 908, w: 136, align: 'center' },
+      { label: 'Win %', x: tableX + 1044, w: 130, align: 'center' },
+      { label: 'Days', x: tableX + 1174, w: 130, align: 'center' },
     ];
 
     drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight + visibleRows.length * rowHeight, 18);
@@ -6871,7 +6954,7 @@ const STORAGE_KEYS = {
       ctx.font = '850 21px Inter, Segoe UI, sans-serif';
       drawWrappedCanvasText(ctx, row.player, columns[1].x + 80, y + 32, columns[1].w - 102, 22, 2);
 
-      [row.totalPoints, row.winnerCount, row.runnerUpCount, row.gamesPlayed, row.daysPlayed].forEach((value, valueIndex) => {
+      [row.totalPoints, row.winnerCount, row.runnerUpCount, row.gamesPlayed, `${leaderboardWinRate(row)}%`, row.daysPlayed].forEach((value, valueIndex) => {
         const column = columns[valueIndex + 2];
         ctx.fillStyle = valueIndex === 0 ? '#115e59' : '#334155';
         ctx.font = valueIndex === 0 ? '900 24px Inter, Segoe UI, sans-serif' : '800 21px Inter, Segoe UI, sans-serif';
@@ -7377,7 +7460,7 @@ const STORAGE_KEYS = {
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const trh = document.createElement('tr');
-    const leaderboardHeaders = ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Days Played'];
+    const leaderboardHeaders = ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Win %', 'Days Played'];
     leaderboardHeaders.forEach(h => {
       const th = document.createElement('th');
       th.scope = 'col';
@@ -7397,6 +7480,7 @@ const STORAGE_KEYS = {
         r.winnerCount,
         r.runnerUpCount,
         r.gamesPlayed,
+        `${leaderboardWinRate(r)}%`,
         r.daysPlayed,
       ];
       cells.forEach((c, cellIndex) => {
@@ -8060,37 +8144,6 @@ const STORAGE_KEYS = {
     header.append(titleBlock, summary);
     panel.appendChild(header);
 
-    const pairRows = relationDetailRows(detail.pairRecords);
-    if (pairRows.length) {
-      const analytics = document.createElement('div');
-      analytics.className = 'playerRelationAnalytics';
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const trh = document.createElement('tr');
-      const pairHeading = 'Opponent Pair';
-      [pairHeading, 'Matches', 'Record', 'Win %'].forEach(label => {
-        const th = document.createElement('th');
-        th.scope = 'col';
-        th.textContent = label;
-        trh.appendChild(th);
-      });
-      thead.appendChild(trh);
-      table.appendChild(thead);
-      const tbody = document.createElement('tbody');
-      pairRows.forEach(row => {
-        const tr = document.createElement('tr');
-        [row.name, row.matchesPlayed, formatStatsRecord(row), `${statsWinRate(row)}%`].forEach(value => {
-          const td = document.createElement('td');
-          td.textContent = value;
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      analytics.appendChild(table);
-      panel.appendChild(analytics);
-    }
-
     const fixtures = [...(detail.fixtures || [])].sort((a, b) =>
       (b.playedAt || b.updatedAt || 0) - (a.playedAt || a.updatedAt || 0)
       || a.tournamentName.localeCompare(b.tournamentName)
@@ -8142,55 +8195,100 @@ const STORAGE_KEYS = {
       parent.appendChild(section);
       return;
     }
-    const list = document.createElement('div');
-    list.className = 'playerRelationList';
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'playerRelationAnalytics playerRelationCombinedTable';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const header = document.createElement('tr');
+    const pairLabel = 'Top Opponent Pair';
+    ['#', relationType === 'partner' ? 'Partner' : 'Opponent', 'Matches', 'Tournaments', 'Record', 'Win %', 'PF-PA', pairLabel, 'Fixtures'].forEach(label => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      header.appendChild(th);
+    });
+    thead.appendChild(header);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
     const detailHost = document.createElement('div');
     rows.forEach(([name, count], index) => {
-      const row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'playerRelationRow';
+      const detail = relationDetailForName(details, name) || {
+        name,
+        matchesPlayed: count,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+        fixtures: [],
+        pairRecords: {},
+      };
+      const topPair = topStatsPairRecord(detail.pairRecords);
+      const row = document.createElement('tr');
       row.setAttribute('aria-expanded', 'false');
-      row.setAttribute('aria-label', `${title}: open fixtures for ${name}`);
-      const rank = document.createElement('span');
-      rank.className = 'playerRelationRank';
-      rank.textContent = `#${index + 1}`;
-      const player = document.createElement('div');
-      player.className = 'playerRelationName';
-      player.appendChild(createTeamPlayerTile(name));
-      const detail = relationDetailForName(details, name);
-      const total = document.createElement('span');
-      total.className = 'playerRelationCount';
-      const tournamentCount = relationTournamentCount(detail);
-      total.textContent = relationType === 'partner'
-        ? `Paired ${count} time${count === 1 ? '' : 's'} | ${tournamentCount} tournament${tournamentCount === 1 ? '' : 's'}`
-        : `Faced ${count} time${count === 1 ? '' : 's'} | ${tournamentCount} tournament${tournamentCount === 1 ? '' : 's'}`;
-      const record = document.createElement('span');
-      record.className = 'playerRelationRecord';
-      record.textContent = detail ? `${formatStatsRecord(detail)} | ${statsWinRate(detail)}%` : '';
-      const metric = document.createElement('span');
-      metric.style.display = 'grid';
-      metric.style.justifyItems = 'end';
-      metric.style.gap = '3px';
-      metric.append(total, record);
-      row.append(rank, player, metric);
-      row.addEventListener('click', () => {
-        const active = row.classList.contains('isActive');
-        list.querySelectorAll('.playerRelationRow').forEach(item => {
+
+      const values = [
+        `#${index + 1}`,
+        null,
+        detail.matchesPlayed || count,
+        relationTournamentCount(detail),
+        formatStatsRecord(detail),
+        `${statsWinRate(detail)}%`,
+        `${detail.pointsFor || 0}-${detail.pointsAgainst || 0}`,
+        topPair ? `${topPair.name} (${topPair.matchesPlayed}, ${formatStatsRecord(topPair)})` : '-',
+        null,
+      ];
+
+      values.forEach((value, cellIndex) => {
+        const td = document.createElement('td');
+        if (cellIndex === 1) {
+          const playerButton = document.createElement('button');
+          playerButton.type = 'button';
+          playerButton.className = 'playerRelationTablePlayer';
+          playerButton.setAttribute('aria-label', `${title}: open fixtures for ${name}`);
+          playerButton.appendChild(createTeamPlayerTile(name));
+          td.appendChild(playerButton);
+          playerButton.addEventListener('click', () => toggleRelationDetail(row, detail, relationType));
+        } else if (cellIndex === 8) {
+          const action = document.createElement('button');
+          action.type = 'button';
+          action.className = 'secondary playerRelationTableAction';
+          action.textContent = 'View';
+          action.setAttribute('aria-label', `${title}: view fixtures for ${name}`);
+          td.appendChild(action);
+          action.addEventListener('click', () => toggleRelationDetail(row, detail, relationType));
+        } else {
+          td.textContent = value;
+        }
+        row.appendChild(td);
+      });
+
+      function toggleRelationDetail(activeRow, activeDetail, activeRelationType) {
+        const active = activeRow.classList.contains('isActive');
+        tbody.querySelectorAll('tr').forEach(item => {
           item.classList.remove('isActive');
           item.setAttribute('aria-expanded', 'false');
+          const action = item.querySelector('.playerRelationTableAction');
+          if (action) action.textContent = 'View';
         });
         if (active) {
           detailHost.innerHTML = '';
           return;
         }
-        row.classList.add('isActive');
-        row.setAttribute('aria-expanded', 'true');
-        renderPlayerRelationDetail(detailHost, detail, relationType);
-      });
-      list.appendChild(row);
+        activeRow.classList.add('isActive');
+        activeRow.setAttribute('aria-expanded', 'true');
+        const action = activeRow.querySelector('.playerRelationTableAction');
+        if (action) action.textContent = 'Hide';
+        renderPlayerRelationDetail(detailHost, activeDetail, activeRelationType);
+      }
+
+      tbody.appendChild(row);
     });
-    section.appendChild(list);
-    appendRelationAnalyticsTable(section, details, relationType);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    section.appendChild(tableWrap);
     section.appendChild(detailHost);
     parent.appendChild(section);
   }
