@@ -36,6 +36,10 @@ try {
     foreach (['bt_users', 'bt_sessions', 'bt_app_state', 'bt_tournaments', 'bt_tournament_matches', 'bt_player_lists', 'bt_app_settings'] as $table) {
         echo $table . " table exists: " . (btTableExists($pdo, $table) ? 'YES' : 'NO') . "\n";
     }
+    echo "bt_tournaments owner_username column: " . (btColumnExists($pdo, 'bt_tournaments', 'owner_username') ? 'YES' : 'NO') . "\n";
+    echo "bt_tournaments owner index: " . (btIndexExists($pdo, 'bt_tournaments', 'idx_bt_tournaments_owner_updated') ? 'YES' : 'NO') . "\n";
+    echo "bt_player_lists owner primary key: " . (btPrimaryKeyColumns($pdo, 'bt_player_lists') === ['owner_username', 'list_id'] ? 'YES' : 'NO') . "\n";
+    echo "bt_app_settings owner primary key: " . (btPrimaryKeyColumns($pdo, 'bt_app_settings') === ['owner_username', 'storage_key'] ? 'YES' : 'NO') . "\n";
     echo "User rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_users')->fetchColumn() . "\n\n";
     echo "Tournament rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_tournaments')->fetchColumn() . "\n";
     echo "Match score rows: " . (int) $pdo->query('SELECT COUNT(*) FROM bt_tournament_matches')->fetchColumn() . "\n";

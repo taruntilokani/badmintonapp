@@ -12,12 +12,15 @@ declare(strict_types=1);
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'database.php';
 
-const SESSION_IDLE_SECONDS = 120;
+const SESSION_IDLE_SECONDS = 300;
 const MAX_ACTIVE_SESSIONS = 3;
 const TOURNAMENT_KEY_PREFIX = 'bt_tournament_v1_';
 const PLAYER_LIST_KEY_PREFIX = 'bt_playerlist_v1_';
 const TOURNAMENTS_INDEX_KEY = 'bt_tournaments_index_v1';
 const PLAYER_LISTS_INDEX_KEY = 'bt_playerlists_index_v1';
+const PLAYER_PHOTO_PUBLIC_PREFIX = 'uploads/player-photos';
+const PLAYER_PHOTO_SIZE = 144;
+const PLAYER_PHOTO_MAX_UPLOAD_BYTES = 1048576;
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
@@ -225,6 +228,159 @@ function databaseId($value, string $label): string
 function ownerUsername($username): string
 {
     return substr(normalizeUsername($username), 0, 40);
+}
+
+function userOwnsAllData(array $user): bool
+{
+    return !empty($user['is_admin']);
+}
+
+function playerPhotoStorageRoot(): string
+{
+    return __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, PLAYER_PHOTO_PUBLIC_PREFIX);
+}
+
+function safePhotoOwnerSegment(array $user): string
+{
+    $owner = ownerUsername($user['username'] ?? '');
+    $owner = preg_replace('/[^a-z0-9._-]+/', '-', $owner) ?: 'user';
+    return substr(trim($owner, '.-'), 0, 48) ?: 'user';
+}
+
+function playerPhotoFilename(string $playerName): string
+{
+    $normalized = strtolower(trim($playerName));
+    if ($normalized === '') {
+        fail('Player name is required.', 400);
+    }
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $normalized) ?: 'player';
+    $slug = substr(trim($slug, '-'), 0, 48) ?: 'player';
+    return $slug . '-' . substr(sha1($normalized), 0, 12) . '.jpg';
+}
+
+function ensurePlayerPhotoDirectory(array $user): string
+{
+    $root = playerPhotoStorageRoot();
+    if (!is_dir($root) && !mkdir($root, 0755, true) && !is_dir($root)) {
+        fail('Cannot create player photo storage folder.', 500);
+    }
+    $ownerDir = $root . DIRECTORY_SEPARATOR . safePhotoOwnerSegment($user);
+    if (!is_dir($ownerDir) && !mkdir($ownerDir, 0755, true) && !is_dir($ownerDir)) {
+        fail('Cannot create account player photo folder.', 500);
+    }
+    if (!is_writable($ownerDir)) {
+        fail('Player photo folder is not writable.', 500);
+    }
+    return $ownerDir;
+}
+
+function decodePlayerPhotoDataUrl(string $dataUrl): string
+{
+    if (!preg_match('/^data:image\/(?:jpeg|jpg|png|webp);base64,([a-z0-9+\/=\r\n]+)$/i', trim($dataUrl), $matches)) {
+        fail('A valid image data URL is required.', 400);
+    }
+    $binary = base64_decode($matches[1], true);
+    if ($binary === false || $binary === '') {
+        fail('The uploaded image could not be decoded.', 400);
+    }
+    if (strlen($binary) > PLAYER_PHOTO_MAX_UPLOAD_BYTES) {
+        fail('The uploaded image is too large.', 413);
+    }
+    if (@getimagesizefromstring($binary) === false) {
+        fail('The uploaded file is not a valid image.', 400);
+    }
+    return $binary;
+}
+
+function encodePlayerPhotoJpeg(string $binary): string
+{
+    if (!function_exists('imagecreatefromstring')) {
+        return $binary;
+    }
+    $source = @imagecreatefromstring($binary);
+    if (!$source) {
+        return $binary;
+    }
+
+    $sourceWidth = imagesx($source);
+    $sourceHeight = imagesy($source);
+    $sourceSize = max(1, min($sourceWidth, $sourceHeight));
+    $sourceX = (int) max(0, ($sourceWidth - $sourceSize) / 2);
+    $sourceY = (int) max(0, ($sourceHeight - $sourceSize) / 2);
+
+    $canvas = imagecreatetruecolor(PLAYER_PHOTO_SIZE, PLAYER_PHOTO_SIZE);
+    $white = imagecolorallocate($canvas, 255, 255, 255);
+    imagefill($canvas, 0, 0, $white);
+    imagecopyresampled(
+        $canvas,
+        $source,
+        0,
+        0,
+        $sourceX,
+        $sourceY,
+        PLAYER_PHOTO_SIZE,
+        PLAYER_PHOTO_SIZE,
+        $sourceSize,
+        $sourceSize
+    );
+
+    ob_start();
+    imagejpeg($canvas, null, 84);
+    $jpeg = (string) ob_get_clean();
+    imagedestroy($source);
+    imagedestroy($canvas);
+    return $jpeg !== '' ? $jpeg : $binary;
+}
+
+function playerPhotoPublicUrl(array $user, string $filename): string
+{
+    return PLAYER_PHOTO_PUBLIC_PREFIX . '/' . rawurlencode(safePhotoOwnerSegment($user)) . '/' . rawurlencode($filename) . '?v=' . time();
+}
+
+function savePlayerPhotoFile(array $user, string $playerName, string $dataUrl): array
+{
+    $directory = ensurePlayerPhotoDirectory($user);
+    $filename = playerPhotoFilename($playerName);
+    $binary = encodePlayerPhotoJpeg(decodePlayerPhotoDataUrl($dataUrl));
+    $target = $directory . DIRECTORY_SEPARATOR . $filename;
+    if (file_put_contents($target, $binary, LOCK_EX) === false) {
+        fail('Could not save player photo.', 500);
+    }
+    @chmod($target, 0644);
+    return [
+        'ok' => true,
+        'url' => playerPhotoPublicUrl($user, $filename),
+        'bytes' => strlen($binary),
+    ];
+}
+
+function deletePlayerPhotoFile(array $user, string $photoUrl, string $playerName = ''): void
+{
+    $filename = '';
+    $path = parse_url($photoUrl, PHP_URL_PATH);
+    if (is_string($path) && $path !== '') {
+        $filename = rawurldecode(basename($path));
+    }
+    if ($filename === '' && trim($playerName) !== '') {
+        $filename = playerPhotoFilename($playerName);
+    }
+    if (!preg_match('/^[a-z0-9][a-z0-9._-]*\.jpg$/', $filename)) {
+        return;
+    }
+
+    $target = playerPhotoStorageRoot()
+        . DIRECTORY_SEPARATOR
+        . safePhotoOwnerSegment($user)
+        . DIRECTORY_SEPARATOR
+        . $filename;
+    $resolvedTarget = realpath($target);
+    $resolvedOwnerDir = realpath(playerPhotoStorageRoot() . DIRECTORY_SEPARATOR . safePhotoOwnerSegment($user));
+    if (!$resolvedTarget || !$resolvedOwnerDir || strncmp($resolvedTarget, $resolvedOwnerDir, strlen($resolvedOwnerDir)) !== 0) {
+        return;
+    }
+    if (is_file($resolvedTarget)) {
+        @unlink($resolvedTarget);
+    }
 }
 
 function decodeStoredArray(string $json): ?array
@@ -572,6 +728,27 @@ function tournamentExists(string $tournamentId): bool
     return (bool) $statement->fetchColumn();
 }
 
+function tournamentOwner(string $tournamentId): ?string
+{
+    $statement = db()->prepare('SELECT owner_username FROM bt_tournaments WHERE tournament_id = ? LIMIT 1');
+    $statement->execute([$tournamentId]);
+    $owner = $statement->fetchColumn();
+    return is_string($owner) ? $owner : null;
+}
+
+function requireTournamentAccess(array $user, string $tournamentId): string
+{
+    $tournamentId = databaseId($tournamentId, 'Tournament id');
+    $owner = tournamentOwner($tournamentId);
+    if ($owner === null) {
+        fail('Tournament not found.', 404);
+    }
+    if (!userOwnsAllData($user) && $owner !== ownerUsername($user['username'] ?? '')) {
+        fail('Tournament not found.', 404);
+    }
+    return $owner;
+}
+
 function playerListExists(string $ownerUsername, string $listId): bool
 {
     $statement = db()->prepare('SELECT 1 FROM bt_player_lists WHERE owner_username = ? AND list_id = ? LIMIT 1');
@@ -579,8 +756,9 @@ function playerListExists(string $ownerUsername, string $listId): bool
     return (bool) $statement->fetchColumn();
 }
 
-function upsertTournamentRecord(array $tournament, bool $deleteLegacy = true): int
+function upsertTournamentRecord(string $ownerUsername, array $tournament, bool $deleteLegacy = true): int
 {
+    $ownerUsername = ownerUsername($ownerUsername);
     $tournamentId = databaseId($tournament['id'] ?? '', 'Tournament id');
     $tournament = fillMissingTournamentScoresFromStoredRows($tournament, $tournamentId);
     $name = boundedString($tournament['name'] ?? 'Untitled Tournament', 255) ?: 'Untitled Tournament';
@@ -591,10 +769,11 @@ function upsertTournamentRecord(array $tournament, bool $deleteLegacy = true): i
 
     $statement = db()->prepare('
         INSERT INTO bt_tournaments
-            (tournament_id, name, scheduled_date, data_json, data_hash, version, created_at, updated_at)
+            (owner_username, tournament_id, name, scheduled_date, data_json, data_hash, version, created_at, updated_at)
         VALUES
-            (?, ?, ?, ?, ?, 1, ?, ?)
+            (?, ?, ?, ?, ?, ?, 1, ?, ?)
         ON DUPLICATE KEY UPDATE
+            owner_username = VALUES(owner_username),
             name = VALUES(name),
             scheduled_date = VALUES(scheduled_date),
             data_json = VALUES(data_json),
@@ -602,13 +781,13 @@ function upsertTournamentRecord(array $tournament, bool $deleteLegacy = true): i
             version = version + 1,
             updated_at = VALUES(updated_at)
     ');
-    $statement->execute([$tournamentId, $name, $scheduledDate, $dataJson, $hash, $now, $now]);
+    $statement->execute([$ownerUsername, $tournamentId, $name, $scheduledDate, $dataJson, $hash, $now, $now]);
     syncTournamentMatchRows($tournamentId, $tournament);
 
     if ($deleteLegacy) {
         $legacyKey = TOURNAMENT_KEY_PREFIX . $tournamentId;
         db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$legacyKey]);
-        db()->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$legacyKey]);
+        db()->prepare('DELETE FROM bt_app_settings WHERE owner_username = ? AND storage_key = ?')->execute([$ownerUsername, $legacyKey]);
     }
 
     $version = db()->prepare('SELECT version FROM bt_tournaments WHERE tournament_id = ?');
@@ -616,15 +795,30 @@ function upsertTournamentRecord(array $tournament, bool $deleteLegacy = true): i
     return (int) $version->fetchColumn();
 }
 
-function deleteTournamentRecord(string $tournamentId): void
+function saveTournamentForUser(array $user, array $tournament): int
+{
+    $tournamentId = databaseId($tournament['id'] ?? '', 'Tournament id');
+    $ownerUsername = ownerUsername($user['username'] ?? '');
+    $existingOwner = tournamentOwner($tournamentId);
+    if ($existingOwner !== null) {
+        if (!userOwnsAllData($user) && $existingOwner !== $ownerUsername) {
+            fail('Tournament not found.', 404);
+        }
+        $ownerUsername = userOwnsAllData($user) ? $existingOwner : $ownerUsername;
+    }
+    return upsertTournamentRecord($ownerUsername, $tournament);
+}
+
+function deleteTournamentRecord(array $user, string $tournamentId): void
 {
     $tournamentId = databaseId($tournamentId, 'Tournament id');
+    $ownerUsername = requireTournamentAccess($user, $tournamentId);
     $pdo = db();
     $pdo->prepare('DELETE FROM bt_tournament_matches WHERE tournament_id = ?')->execute([$tournamentId]);
     $pdo->prepare('DELETE FROM bt_tournaments WHERE tournament_id = ?')->execute([$tournamentId]);
     $legacyKey = TOURNAMENT_KEY_PREFIX . $tournamentId;
     $pdo->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$legacyKey]);
-    $pdo->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$legacyKey]);
+    $pdo->prepare('DELETE FROM bt_app_settings WHERE owner_username = ? AND storage_key = ?')->execute([$ownerUsername, $legacyKey]);
 }
 
 function upsertPlayerListRecord(string $ownerUsername, string $storageKey, array $value, bool $deleteLegacy = true): int
@@ -658,7 +852,7 @@ function upsertPlayerListRecord(string $ownerUsername, string $storageKey, array
 
     if ($deleteLegacy) {
         db()->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$storageKey]);
-        db()->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$storageKey]);
+        db()->prepare('DELETE FROM bt_app_settings WHERE owner_username = ? AND storage_key = ?')->execute([$ownerUsername, $storageKey]);
     }
 
     $version = db()->prepare('SELECT version FROM bt_player_lists WHERE owner_username = ? AND list_id = ?');
@@ -675,7 +869,7 @@ function deletePlayerListRecord(string $ownerUsername, string $listId): void
     $pdo->prepare('DELETE FROM bt_player_lists WHERE owner_username = ? AND list_id = ?')->execute([$ownerUsername, $listId]);
     if ($ownerUsername === '') {
         $pdo->prepare('DELETE FROM bt_app_state WHERE storage_key = ?')->execute([$storageKey]);
-        $pdo->prepare('DELETE FROM bt_app_settings WHERE storage_key = ?')->execute([$storageKey]);
+        $pdo->prepare('DELETE FROM bt_app_settings WHERE owner_username = ? AND storage_key = ?')->execute([$ownerUsername, $storageKey]);
     }
 }
 
@@ -741,7 +935,7 @@ function applyScorePatchToTournament(array &$tournament, string $matchId, string
     return $updated;
 }
 
-function patchTournamentMatchScore(string $tournamentId, string $matchId, int $scoreSide, ?int $scoreValue): int
+function patchTournamentMatchScore(array $user, string $tournamentId, string $matchId, int $scoreSide, ?int $scoreValue): int
 {
     $tournamentId = databaseId($tournamentId, 'Tournament id');
     $matchId = databaseId($matchId, 'Match id');
@@ -754,10 +948,15 @@ function patchTournamentMatchScore(string $tournamentId, string $matchId, int $s
 
     try {
         $pdo->beginTransaction();
-        $statement = $pdo->prepare('SELECT data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
+        $statement = $pdo->prepare('SELECT owner_username, data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
         $statement->execute([$tournamentId]);
-        $dataJson = $statement->fetchColumn();
+        $row = $statement->fetch();
+        $dataJson = is_array($row) ? (string) ($row['data_json'] ?? '') : '';
         if (!is_string($dataJson) || $dataJson === '') {
+            $pdo->rollBack();
+            fail('Tournament not found.', 404);
+        }
+        if (!userOwnsAllData($user) && (string) ($row['owner_username'] ?? '') !== ownerUsername($user['username'] ?? '')) {
             $pdo->rollBack();
             fail('Tournament not found.', 404);
         }
@@ -809,17 +1008,22 @@ function patchTournamentMatchScore(string $tournamentId, string $matchId, int $s
     }
 }
 
-function syncTournamentMatchScoreBatch(string $tournamentId, array $scores): int
+function syncTournamentMatchScoreBatch(array $user, string $tournamentId, array $scores): int
 {
     $tournamentId = databaseId($tournamentId, 'Tournament id');
     $pdo = db();
 
     try {
         $pdo->beginTransaction();
-        $statement = $pdo->prepare('SELECT data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
+        $statement = $pdo->prepare('SELECT owner_username, data_json FROM bt_tournaments WHERE tournament_id = ? FOR UPDATE');
         $statement->execute([$tournamentId]);
-        $dataJson = $statement->fetchColumn();
+        $row = $statement->fetch();
+        $dataJson = is_array($row) ? (string) ($row['data_json'] ?? '') : '';
         if (!is_string($dataJson) || $dataJson === '') {
+            $pdo->rollBack();
+            fail('Tournament not found.', 404);
+        }
+        if (!userOwnsAllData($user) && (string) ($row['owner_username'] ?? '') !== ownerUsername($user['username'] ?? '')) {
             $pdo->rollBack();
             fail('Tournament not found.', 404);
         }
@@ -909,7 +1113,7 @@ function migrateLegacyAppState(): void
             $tournamentId = trim((string) ($tournament['id'] ?? substr($key, strlen(TOURNAMENT_KEY_PREFIX))));
             if (is_array($tournament) && $tournamentId !== '' && strlen($tournamentId) <= 191 && !tournamentExists($tournamentId)) {
                 $tournament['id'] = $tournamentId;
-                upsertTournamentRecord($tournament, false);
+                upsertTournamentRecord('', $tournament, false);
             }
             continue;
         }
@@ -929,25 +1133,36 @@ function migrateLegacyAppState(): void
     }
 }
 
-function exportApplicationState(array $default, ?string $username = null): array
+function exportApplicationState(array $default, ?array $user = null): array
 {
     $pdo = db();
-    $ownerUsername = $username === null ? null : ownerUsername($username);
+    $ownerUsername = is_array($user) ? ownerUsername($user['username'] ?? '') : null;
+    $canSeeAll = is_array($user) && userOwnsAllData($user);
     $state = [];
 
-    $legacy = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
-    foreach ($legacy->fetchAll() as $row) {
-        $state[(string) $row['storage_key']] = (string) $row['storage_value'];
+    if ($canSeeAll) {
+        $legacy = $pdo->query('SELECT storage_key, storage_value FROM bt_app_state');
+        foreach ($legacy->fetchAll() as $row) {
+            $state[(string) $row['storage_key']] = (string) $row['storage_value'];
+        }
     }
 
     if ($ownerUsername === null) {
-        $settings = $pdo->query('SELECT storage_key, storage_value FROM bt_app_settings ORDER BY owner_username ASC');
+        $settingRows = [];
+    } elseif ($canSeeAll) {
+        $settings = $pdo->prepare('
+            SELECT storage_key, storage_value, owner_username
+            FROM bt_app_settings
+            WHERE owner_username = "" OR owner_username = ?
+            ORDER BY owner_username ASC
+        ');
+        $settings->execute([$ownerUsername]);
         $settingRows = $settings->fetchAll();
     } else {
         $settings = $pdo->prepare('
             SELECT storage_key, storage_value, owner_username
             FROM bt_app_settings
-            WHERE owner_username = "" OR owner_username = ?
+            WHERE owner_username = ?
             ORDER BY owner_username ASC
         ');
         $settings->execute([$ownerUsername]);
@@ -958,12 +1173,24 @@ function exportApplicationState(array $default, ?string $username = null): array
     }
 
     $tournamentIndex = [];
-    $tournaments = $pdo->query('
-        SELECT tournament_id, name, scheduled_date, data_json, version, created_at, updated_at
-        FROM bt_tournaments
-        ORDER BY updated_at DESC
-    ');
-    foreach ($tournaments->fetchAll() as $row) {
+    if ($canSeeAll) {
+        $tournaments = $pdo->query('
+            SELECT owner_username, tournament_id, name, scheduled_date, data_json, version, created_at, updated_at
+            FROM bt_tournaments
+            ORDER BY updated_at DESC
+        ');
+        $tournamentRows = $tournaments->fetchAll();
+    } else {
+        $tournaments = $pdo->prepare('
+            SELECT owner_username, tournament_id, name, scheduled_date, data_json, version, created_at, updated_at
+            FROM bt_tournaments
+            WHERE owner_username = ?
+            ORDER BY updated_at DESC
+        ');
+        $tournaments->execute([$ownerUsername]);
+        $tournamentRows = $tournaments->fetchAll();
+    }
+    foreach ($tournamentRows as $row) {
         $tournamentId = (string) $row['tournament_id'];
         $tournament = decodeStoredArray((string) $row['data_json']);
         if (!is_array($tournament)) {
@@ -975,6 +1202,7 @@ function exportApplicationState(array $default, ?string $username = null): array
         $tournamentIndex[] = [
             'id' => $tournamentId,
             'name' => (string) ($tournament['name'] ?? $row['name']),
+            'ownerUsername' => (string) ($row['owner_username'] ?? ''),
             'scheduledDate' => (string) ($tournament['scheduledDate'] ?? $row['scheduled_date']),
             'createdAt' => jsMillisecondsFromIso((string) $row['created_at']),
             'updatedAt' => jsMillisecondsFromIso((string) $row['updated_at']),
@@ -984,7 +1212,7 @@ function exportApplicationState(array $default, ?string $username = null): array
     $state[TOURNAMENTS_INDEX_KEY] = jsonEncodeValue($tournamentIndex);
 
     $playerListsById = [];
-    if ($ownerUsername === null) {
+    if ($canSeeAll) {
         $playerLists = $pdo->query('
             SELECT owner_username, list_id, name, data_json
             FROM bt_player_lists
@@ -995,7 +1223,7 @@ function exportApplicationState(array $default, ?string $username = null): array
         $playerLists = $pdo->prepare('
             SELECT owner_username, list_id, name, data_json
             FROM bt_player_lists
-            WHERE owner_username = "" OR owner_username = ?
+            WHERE owner_username = ?
             ORDER BY owner_username ASC, name ASC, list_id ASC
         ');
         $playerLists->execute([$ownerUsername]);
@@ -1006,8 +1234,11 @@ function exportApplicationState(array $default, ?string $username = null): array
         if ($listId === '') {
             continue;
         }
-        $playerListsById[$listId] = [
+        $rowOwner = (string) ($row['owner_username'] ?? '');
+        $exportListId = $canSeeAll && $rowOwner !== '' ? $rowOwner . '__' . $listId : $listId;
+        $playerListsById[$exportListId] = [
             'name' => (string) $row['name'],
+            'owner_username' => $rowOwner,
             'data_json' => (string) $row['data_json'],
         ];
     }
@@ -1017,7 +1248,13 @@ function exportApplicationState(array $default, ?string $username = null): array
 
     $playerListIndex = [];
     foreach ($playerListsById as $listId => $row) {
-        $state[PLAYER_LIST_KEY_PREFIX . $listId] = $row['data_json'];
+        $list = decodeStoredArray((string) $row['data_json']);
+        if (is_array($list) && $canSeeAll) {
+            $list['ownerUsername'] = $row['owner_username'];
+            $state[PLAYER_LIST_KEY_PREFIX . $listId] = jsonEncodeValue($list);
+        } else {
+            $state[PLAYER_LIST_KEY_PREFIX . $listId] = $row['data_json'];
+        }
         $playerListIndex[] = (string) $listId;
     }
     $state[PLAYER_LISTS_INDEX_KEY] = jsonEncodeValue($playerListIndex);
@@ -1079,7 +1316,7 @@ function readStoreFromDatabase(string $name, array $default): array
     }
 
     if ($name === 'app-state') {
-        return exportApplicationState($default);
+        return $default;
     }
 
     return $default;
@@ -1155,7 +1392,7 @@ function replaceStoreInDatabase(string $name, array $value): void
                 $tournament = decodeStoredArray((string) $storageValue);
                 if (is_array($tournament)) {
                     $tournament['id'] = (string) ($tournament['id'] ?? substr($key, strlen(TOURNAMENT_KEY_PREFIX)));
-                    upsertTournamentRecord($tournament, false);
+                    upsertTournamentRecord('', $tournament, false);
                 }
                 continue;
             }
@@ -1306,15 +1543,15 @@ switch ($action) {
 
     case 'export_app_state':
         list($user) = requireUser($payload['auth_token'] ?? '');
-        respond(exportApplicationState([], (string) $user['username']));
+        respond(exportApplicationState([], $user));
 
     case 'save_tournament':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $tournament = $payload['payload'] ?? null;
         if (!is_array($tournament) || trim((string) ($tournament['id'] ?? '')) === '') {
             fail('A tournament payload with an id is required.', 400);
         }
-        $version = upsertTournamentRecord($tournament);
+        $version = saveTournamentForUser($user, $tournament);
         $matches = tournamentMatches($tournament);
         respond([
             'ok' => true,
@@ -1324,8 +1561,9 @@ switch ($action) {
         ]);
 
     case 'patch_match_score':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $version = patchTournamentMatchScore(
+            $user,
             (string) ($payload['tournament_id'] ?? ''),
             (string) ($payload['match_id'] ?? ''),
             (int) ($payload['score_side'] ?? 0),
@@ -1334,17 +1572,34 @@ switch ($action) {
         respond(['ok' => true, 'version' => $version]);
 
     case 'save_match_scores':
-        requireUser($payload['auth_token'] ?? '');
+        list($user) = requireUser($payload['auth_token'] ?? '');
         $scores = $payload['scores'] ?? null;
         if (!is_array($scores)) {
             fail('A score list is required.', 400);
         }
-        $version = syncTournamentMatchScoreBatch((string) ($payload['tournament_id'] ?? ''), $scores);
+        $version = syncTournamentMatchScoreBatch($user, (string) ($payload['tournament_id'] ?? ''), $scores);
         respond(['ok' => true, 'version' => $version, 'updated' => count($scores)]);
 
     case 'delete_tournament':
-        requireUser($payload['auth_token'] ?? '');
-        deleteTournamentRecord(trim((string) ($payload['tournament_id'] ?? '')));
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        deleteTournamentRecord($user, trim((string) ($payload['tournament_id'] ?? '')));
+        respond(['ok' => true]);
+
+    case 'upload_player_photo':
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        respond(savePlayerPhotoFile(
+            $user,
+            trim((string) ($payload['player_name'] ?? '')),
+            (string) ($payload['image_data'] ?? '')
+        ));
+
+    case 'delete_player_photo':
+        list($user) = requireUser($payload['auth_token'] ?? '');
+        deletePlayerPhotoFile(
+            $user,
+            trim((string) ($payload['photo_url'] ?? '')),
+            trim((string) ($payload['player_name'] ?? ''))
+        );
         respond(['ok' => true]);
 
     case 'save_player_list':

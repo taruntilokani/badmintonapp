@@ -46,6 +46,8 @@ bt_app_settings
 - `bt_player_lists`: one row per saved player list per account.
 - `bt_app_settings`: small app preferences per account, such as active view, filters, shuttle settings, and indexes.
 
+Ownership is enforced on the server. Regular users only export, load, update, and delete rows where `owner_username` matches their login. New users receive empty tournament and player-list indexes, so they start fresh even on a shared browser. Admin users can load all tournaments and player lists, and the dropdown labels include the row owner for clarity. Legacy unowned rows use a blank owner and remain admin-visible for migration.
+
 When multiple sessions are logged in, session refresh/logout writes only touch `bt_sessions`, tournament saves only touch the relevant tournament rows, and score entry uses a small `patch_match_score` API call against the match-score table. The tournament snapshot still exists for compatibility, but exported data overlays the latest match-score rows before loading the app.
 
 Player lists are account-level, not tournament-level. Adding or loading players inside a tournament also updates that account's player draft, so the next new tournament starts with the same roster and saved lists stay available for that same login.
@@ -53,6 +55,8 @@ Player lists are account-level, not tournament-level. Adding or loading players 
 The app uses write-through sync: tournament, player-list, score, and setting changes start a MySQL save immediately. Saves are queued per record so newer edits cannot be overwritten by older in-flight requests, and logout waits for the queue to finish. `health.php`, `diagnose.php`, and `api.php?action=ping` show row counts so you can confirm data is present in MySQL after saving.
 
 When loading a tournament, the API also repairs the exported tournament payload from `bt_tournament_matches` if the tournament snapshot is missing match/schedule rows. This keeps the schedule recoverable from the normalized match table.
+
+Player photos are optimized as small avatar files and saved under `uploads/player-photos/<username>/`. The app stores the photo URL in the player list/tournament data, which keeps login and database loading faster than storing large base64 images in MySQL. Upload the `uploads` folder structure with the app; the actual player image files are created on the server and are ignored by git.
 
 ## Files To Upload
 
@@ -64,6 +68,8 @@ index.php
 api.php
 database.php
 db-config.php
+bs-optimized.png
+uploads/
 health.php
 diagnose.php
 VERSION.txt
