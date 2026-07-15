@@ -18,14 +18,6 @@ Change the default password immediately after first login.
 
 The live credentials are stored in `db-config.php`. This file is intentionally ignored by git.
 
-The current configured database is:
-
-```text
-Database name: if0_42373389_badmintonleaderboard
-MySQL user: if0_42373389
-MySQL host: sql201.infinityfree.com
-MySQL port: 3306
-```
 
 The app creates these tables automatically when `health.php`, `diagnose.php`, or `api.php` runs:
 
