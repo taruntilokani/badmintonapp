@@ -127,6 +127,11 @@ header('Expires: 0');
       line-height: 1.45;
     }
 
+    #pageTitle,
+    .subTitle {
+      display: none !important;
+    }
+
     .section {
       background: var(--surface);
       padding: clamp(14px, 2.6vw, 20px);
@@ -298,47 +303,22 @@ header('Expires: 0');
       background: #ffffff;
     }
 
-    #sessionBar {
-      position: fixed;
-      top: max(10px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
-      z-index: 70;
-      width: auto;
-      padding: 0;
-      margin: 0;
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      overflow: visible;
-    }
-
-    .accountBar {
-      display: flex;
-      justify-content: flex-end;
-      width: 100%;
-    }
-
-    .accountPill {
+    .navAccountBar {
       display: inline-flex;
       align-items: center;
       justify-content: flex-end;
       gap: 6px;
+      flex: 0 0 auto;
       min-width: 0;
+      margin-left: auto;
       padding: 5px 5px 5px 10px;
       border: 1px solid var(--border);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.9);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .accountLabel {
-      display: none;
+      border-radius: 8px;
+      background: #ffffff;
     }
 
     .accountName {
-      max-width: 150px;
+      max-width: 130px;
       color: var(--text);
       font-size: 12px;
       font-weight: 800;
@@ -348,6 +328,7 @@ header('Expires: 0');
     }
 
     #sessionLogoutBtn {
+      flex: 0 0 30px !important;
       width: 30px !important;
       min-width: 30px !important;
       height: 30px !important;
@@ -358,7 +339,17 @@ header('Expires: 0');
       color: var(--danger);
       border-color: var(--border);
       font-size: 17px;
+      font-weight: 800;
       line-height: 1;
+      box-shadow: none;
+      text-transform: none;
+    }
+
+    .bottomNav #sessionLogoutBtn:hover:not(:disabled) {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: var(--danger);
+      transform: none;
       box-shadow: none;
     }
 
@@ -571,7 +562,8 @@ header('Expires: 0');
       flex: 0 0 auto;
     }
 
-    #shareLeaderboardBtn {
+    #shareLeaderboardBtn,
+    #shareFinalsScheduleBtn {
       width: 44px;
       min-width: 44px;
       height: 42px;
@@ -581,7 +573,16 @@ header('Expires: 0');
       white-space: nowrap;
     }
 
-    #leaderboardShareStatus {
+    .finalsScheduleHeaderActions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    #leaderboardShareStatus,
+    #finalsScheduleShareStatus {
       margin-top: 8px;
     }
 
@@ -615,6 +616,32 @@ header('Expires: 0');
 
     .playersControlPanel {
       margin-bottom: 0;
+    }
+
+    .playerListControlGrid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) repeat(3, 44px);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .playerListSelectWrap {
+      min-width: 0;
+    }
+
+    .playerListActions {
+      display: contents;
+    }
+
+    .playerListIconBtn {
+      width: 44px;
+      min-width: 44px;
+      height: 42px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 19px;
+      line-height: 1;
     }
 
     .playersControlPanel .workspacePanel {
@@ -984,12 +1011,9 @@ header('Expires: 0');
         padding: 11px;
       }
 
-      .accountBar {
-        justify-content: stretch;
-      }
-
-      .accountPill {
+      .navAccountBar {
         width: 100%;
+        margin-left: 0;
         border-radius: 10px;
       }
 
@@ -1251,7 +1275,10 @@ header('Expires: 0');
       font-size: 10px;
     }
 
-    .hidden { display: none; }
+    .hidden,
+    [hidden] {
+      display: none !important;
+    }
 
     .bottomNav {
       position: sticky;
@@ -1642,7 +1669,7 @@ header('Expires: 0');
 
     .playerStatsSplit {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       margin-top: 12px;
     }
@@ -1806,6 +1833,39 @@ header('Expires: 0');
       white-space: normal;
       vertical-align: top;
       font-size: 12px;
+    }
+
+    .playerRelationCombinedTable tbody tr.isActive {
+      background: #f0fdfa;
+      outline: 2px solid #99f6e4;
+      outline-offset: -2px;
+    }
+
+    .playerRelationTablePlayer {
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      box-shadow: none;
+      text-align: left;
+      justify-content: flex-start;
+    }
+
+    .playerRelationTablePlayer:hover,
+    .playerRelationTablePlayer:focus {
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .playerRelationTableAction {
+      width: auto;
+      min-width: 54px;
+      min-height: 32px;
+      padding: 6px 9px;
+      font-size: 11px;
     }
 
     .playerResultBadge {
@@ -2202,6 +2262,8 @@ header('Expires: 0');
 
     .pointsFixtureTable {
       margin: 8px 0 0;
+      width: 100%;
+      table-layout: fixed;
     }
 
     .pointsFixtureTable .scoreInput {
@@ -2347,9 +2409,20 @@ header('Expires: 0');
 
       .playersTable .playerIconBtn,
       .playersTable .photoUploadBtn,
-      .playersHeaderActions .playerIconBtn {
+      .playersHeaderActions .playerIconBtn,
+      .playerListIconBtn {
         width: 36px !important;
         min-width: 36px !important;
+      }
+
+      .playerListControlGrid {
+        grid-template-columns: minmax(0, 1fr) repeat(3, 40px);
+        gap: 6px;
+      }
+
+      .playerListIconBtn {
+        height: 40px;
+        font-size: 17px;
       }
     }
 
@@ -2577,6 +2650,13 @@ header('Expires: 0');
         border-color: transparent;
         box-shadow: inset 3px 0 0 var(--primary);
       }
+
+      .navAccountBar {
+        width: 100%;
+        margin: 6px 0 0;
+        padding-top: 8px;
+        border-top-color: var(--border);
+      }
     }
 
     @media (max-width: 600px) {
@@ -2623,6 +2703,19 @@ header('Expires: 0');
       .row > div > button {
         width: 100%;
         margin-top: 4px;
+      }
+
+      .playerListControlGrid {
+        grid-template-columns: minmax(0, 1fr) repeat(3, 40px);
+        gap: 6px;
+      }
+
+      .playerListIconBtn {
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px;
+        margin-top: 0;
+        font-size: 17px;
       }
 
       table {
@@ -2781,6 +2874,114 @@ header('Expires: 0');
         text-transform: uppercase;
       }
 
+      .pointsFixturePanel {
+        padding: 8px;
+        border-left-width: 3px;
+        max-width: 100%;
+        overflow: visible;
+      }
+
+      .pointsFixturePanelHeader {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .pointsFixtureTable {
+        display: block;
+        min-width: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+      }
+
+      .pointsFixtureTable thead {
+        display: none;
+      }
+
+      .pointsFixtureTable tbody {
+        display: grid;
+        gap: 8px;
+      }
+
+      .pointsFixtureTable tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 46px 12px 46px minmax(0, 1fr);
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .pointsFixtureTable tr::before {
+        content: 'vs';
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+        justify-self: center;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      .pointsFixtureTable td {
+        display: flex;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        white-space: normal;
+      }
+
+      .pointsFixtureTable td:nth-child(1) {
+        display: none;
+      }
+
+      .pointsFixtureTable td:nth-child(2),
+      .pointsFixtureTable td:nth-child(5) {
+        align-items: center;
+        font-weight: 650;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .pointsFixtureTable td:nth-child(2) {
+        grid-column: 1;
+        justify-content: flex-end;
+        text-align: right;
+      }
+
+      .pointsFixtureTable td:nth-child(3) {
+        grid-column: 2;
+        justify-content: center;
+      }
+
+      .pointsFixtureTable td:nth-child(4) {
+        grid-column: 4;
+        justify-content: center;
+      }
+
+      .pointsFixtureTable td:nth-child(5) {
+        grid-column: 5;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .pointsFixtureTable .scoreInput {
+        width: 44px !important;
+        min-width: 44px;
+        max-width: 44px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+
       .scoreInput,
       .knockoutTeamRow input[type=number] {
         width: 72px !important;
@@ -2831,7 +3032,6 @@ header('Expires: 0');
         -webkit-overflow-scrolling: touch;
       }
 
-      #pointsTableOutput table,
       #usersList table,
       #shuttleBorrowersOutput table,
       #shuttleHistoryOutput table {
@@ -2893,6 +3093,14 @@ header('Expires: 0');
 
       .workspaceHeader .hint {
         font-size: 11px;
+      }
+
+      #viewTournament > .workspaceHeader,
+      #viewPlayers > .workspaceHeader,
+      #viewSchedule > .workspaceHeader,
+      #viewPoints > .workspaceHeader,
+      #viewHistory > .workspaceHeader {
+        display: none !important;
       }
 
       .bottomNav {
@@ -2979,7 +3187,8 @@ header('Expires: 0');
         font-size: 13px;
       }
 
-      #shareLeaderboardBtn {
+      #shareLeaderboardBtn,
+      #shareFinalsScheduleBtn {
         width: 44px !important;
         min-width: 44px;
         height: 40px;
@@ -2987,11 +3196,7 @@ header('Expires: 0');
         margin-top: 0;
       }
 
-      .accountBar {
-        justify-content: flex-end;
-      }
-
-      .accountPill {
+      .navAccountBar {
         width: auto;
         border-radius: 999px;
       }
@@ -3275,10 +3480,219 @@ header('Expires: 0');
         overflow-wrap: anywhere;
         text-align: center;
       }
+
+      #pointsTableOutput {
+        overflow-x: visible;
+      }
+
+      #pointsTableOutput table {
+        display: table;
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: fixed;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #ffffff;
+        font-size: 10px;
+      }
+
+      #pointsTableOutput thead {
+        display: table-header-group;
+      }
+
+      #pointsTableOutput tbody {
+        display: table-row-group;
+      }
+
+      #pointsTableOutput tr {
+        display: table-row;
+      }
+
+      #pointsTableOutput th,
+      #pointsTableOutput td {
+        display: table-cell;
+        padding: 6px 2px;
+        border-bottom: 1px solid var(--border);
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      #pointsTableOutput th {
+        font-size: 7.5px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      #pointsTableOutput td {
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      #pointsTableOutput th:nth-child(1),
+      #pointsTableOutput td:nth-child(1) {
+        width: 24px;
+      }
+
+      #pointsTableOutput th:nth-child(2),
+      #pointsTableOutput td:nth-child(2) {
+        width: 35%;
+      }
+
+      #pointsTableOutput th:nth-child(3),
+      #pointsTableOutput td:nth-child(3),
+      #pointsTableOutput th:nth-child(4),
+      #pointsTableOutput td:nth-child(4),
+      #pointsTableOutput th:nth-child(5),
+      #pointsTableOutput td:nth-child(5) {
+        width: 24px;
+      }
+
+      #pointsTableOutput th:nth-child(6),
+      #pointsTableOutput td:nth-child(6),
+      #pointsTableOutput th:nth-child(7),
+      #pointsTableOutput td:nth-child(7),
+      #pointsTableOutput th:nth-child(8),
+      #pointsTableOutput td:nth-child(8) {
+        width: 28px;
+      }
+
+      #pointsTableOutput th:nth-child(9),
+      #pointsTableOutput td:nth-child(9) {
+        width: 28px;
+      }
+
+      #pointsTableOutput .pointsTeamButton {
+        width: 100%;
+        min-width: 0;
+        padding: 3px 2px;
+        justify-content: center;
+        text-align: center;
+        font-size: 9px;
+        line-height: 1.1;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      #pointsTableOutput .pointsTeamButton::after {
+        float: none;
+        margin-left: 3px;
+        font-size: 9px;
+      }
+
+      #pointsTableOutput .pointsFixtureDetail > td {
+        display: table-cell;
+        width: 100%;
+        padding: 0;
+      }
+
+      #pointsTableOutput .pointsFixturePanel {
+        width: calc(100vw - 32px);
+        max-width: calc(100vw - 32px);
+        margin-left: calc((100% - (100vw - 32px)) / 2);
+      }
+
+      #pointsTableOutput .pointsFixtureTable {
+        display: block;
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: auto;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+      }
+
+      #pointsTableOutput .pointsFixtureTable thead {
+        display: none;
+      }
+
+      #pointsTableOutput .pointsFixtureTable tbody {
+        display: grid;
+        gap: 8px;
+      }
+
+      #pointsTableOutput .pointsFixtureTable tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 46px 12px 46px minmax(0, 1fr);
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      #pointsTableOutput .pointsFixtureTable tr::before {
+        content: 'vs';
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+        justify-self: center;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td {
+        display: flex;
+        min-width: 0;
+        width: auto;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        white-space: normal;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(1) {
+        display: none;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(2),
+      #pointsTableOutput .pointsFixtureTable td:nth-child(5) {
+        align-items: center;
+        font-weight: 650;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(2) {
+        grid-column: 1;
+        justify-content: flex-end;
+        text-align: right;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(3) {
+        grid-column: 2;
+        justify-content: center;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(4) {
+        grid-column: 4;
+        justify-content: center;
+      }
+
+      #pointsTableOutput .pointsFixtureTable td:nth-child(5) {
+        grid-column: 5;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      #pointsTableOutput .pointsFixtureTable .scoreInput {
+        width: 44px !important;
+        min-width: 44px;
+        max-width: 44px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
     }
 
     @media (max-width: 430px) {
-      .accountPill {
+      .navAccountBar {
         display: inline-flex;
         gap: 6px;
       }
@@ -3970,18 +4384,7 @@ header('Expires: 0');
 
 <h1 id="pageTitle">Badminton Tournament Manager</h1>
 <div class="subTitle">Run tournaments, scoring, standings, finals, and history from one organized workspace.</div>
-<div class="section hidden" id="sessionBar">
-  <div class="accountBar">
-    <div class="accountPill">
-      <span class="accountLabel">Signed in</span>
-      <span class="accountName" id="signedInUser">-</span>
-      <button id="sessionLogoutBtn" class="secondary" type="button" aria-label="Logout" title="Logout">&#9211;</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="section" id="authSection" aria-labelledby="authHeading">
+<div class="section hidden" id="authSection" aria-labelledby="authHeading">
   <div class="authBrandPanel">
     <div class="authIllustration" aria-hidden="true">
       <img class="authBrandImage" src="bs-optimized.png" alt="" loading="eager" decoding="async" />
@@ -4022,14 +4425,18 @@ header('Expires: 0');
 <div class="bottomNav" id="bottomNav" role="tablist" aria-label="Tournament features" aria-orientation="horizontal">
   <button id="tabTournament" class="bottomNavBtn active" data-view="tournament" role="tab" aria-controls="viewTournament" aria-selected="true">Tournament</button>
   <button id="tabPlayers" class="bottomNavBtn" data-view="players" role="tab" aria-controls="viewPlayers" aria-selected="false">Players</button>
-  <button id="tabPairing" class="bottomNavBtn" data-view="pairing" role="tab" aria-controls="viewPairing" aria-selected="false">Team Pairing</button>
-  <button id="tabSchedule" class="bottomNavBtn" data-view="schedule" role="tab" aria-controls="viewSchedule" aria-selected="false" disabled>Schedule</button>
-  <button id="tabPoints" class="bottomNavBtn" data-view="points" role="tab" aria-controls="viewPoints" aria-selected="false" disabled>Points</button>
-  <button id="tabUsers" class="bottomNavBtn" data-view="users" role="tab" aria-controls="usersAdminSection" aria-selected="false" disabled>Users</button>
+  <button id="tabSchedule" class="bottomNavBtn" data-view="schedule" role="tab" aria-controls="viewSchedule" aria-selected="false" disabled hidden>Schedule</button>
+  <button id="tabPoints" class="bottomNavBtn" data-view="points" role="tab" aria-controls="viewPoints" aria-selected="false" disabled hidden>Points</button>
+  <button id="tabUsers" class="bottomNavBtn adminOnly hidden" data-view="users" role="tab" aria-controls="usersAdminSection" aria-selected="false" disabled hidden>Users</button>
   <button id="tabLeaderboard" class="bottomNavBtn" data-view="leaderboard" role="tab" aria-controls="viewLeaderboard" aria-selected="false">Leaderboard</button>
   <button id="tabStats" class="bottomNavBtn" data-view="stats" role="tab" aria-controls="viewStats" aria-selected="false">Player Statistics</button>
   <button id="tabHistory" class="bottomNavBtn" data-view="history" role="tab" aria-controls="viewHistory" aria-selected="false">History</button>
+  <button id="tabPairing" class="bottomNavBtn" data-view="pairing" role="tab" aria-controls="viewPairing" aria-selected="false">Team Pairing</button>
   <button id="tabShuttles" class="bottomNavBtn" data-view="shuttles" role="tab" aria-controls="viewShuttles" aria-selected="false">Shuttle Management</button>
+  <div class="navAccountBar hidden" id="sessionBar" aria-label="Account">
+    <span class="accountName" id="signedInUser">-</span>
+    <button id="sessionLogoutBtn" class="secondary" type="button" aria-label="Logout" title="Logout">&#9211;</button>
+  </div>
 </div>
 
 <!-- Unified, feature-based screens (one feature per tab) -->
@@ -4215,14 +4622,27 @@ header('Expires: 0');
         <h4>Player Lists</h4>
         <span class="pill">Account</span>
       </div>
-      <label for="playerListSelect">Saved Player List</label>
-      <select id="playerListSelect">
-        <option value="">-- Select --</option>
-      </select>
-      <div class="row workspaceActionBar" style="justify-content:flex-end;">
-        <button id="loadPlayerListBtn" disabled class="secondary">Load List</button>
-        <button id="savePlayerListBtn" disabled>Save Current List</button>
-        <button id="deletePlayerListBtn" disabled class="danger" type="button">Delete List</button>
+      <div class="playerListControlGrid">
+        <div class="playerListSelectWrap">
+          <label for="playerListSelect">Saved Player List</label>
+          <select id="playerListSelect">
+            <option value="">-- Select Existing List --</option>
+          </select>
+        </div>
+        <div class="playerListActions" aria-label="Player list actions">
+          <button id="loadPlayerListBtn" disabled class="secondary playerListIconBtn" type="button" aria-label="Load selected player list" title="Load selected player list">
+            <span aria-hidden="true">&#8635;</span>
+            <span class="srOnly">Load selected player list</span>
+          </button>
+          <button id="savePlayerListBtn" disabled class="playerListIconBtn" type="button" aria-label="Save current player list" title="Save current player list">
+            <span aria-hidden="true">&#128190;</span>
+            <span class="srOnly">Save current player list</span>
+          </button>
+          <button id="deletePlayerListBtn" disabled class="danger playerListIconBtn" type="button" aria-label="Delete selected player list" title="Delete selected player list">
+            <span aria-hidden="true">&#9003;</span>
+            <span class="srOnly">Delete selected player list</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -4424,9 +4844,16 @@ header('Expires: 0');
     <div class="playerStatsSection" style="margin:12px 0 18px;">
       <div class="playerStatsSectionHeader">
         <h4>Finals Schedule</h4>
-        <span class="pill" id="scheduleFinalsFormat">Playoffs</span>
+        <div class="finalsScheduleHeaderActions">
+          <span class="pill" id="scheduleFinalsFormat">Playoffs</span>
+          <button id="shareFinalsScheduleBtn" type="button" class="secondary" disabled aria-label="Share finals schedule image" title="Share finals schedule image">
+            <span aria-hidden="true">&#128247;</span>
+            <span class="srOnly">Share Finals Schedule</span>
+          </button>
+        </div>
       </div>
       <div id="scheduleFinalsStatus" class="hint"></div>
+      <div id="finalsScheduleShareStatus" class="authStatus" aria-live="polite"></div>
       <div id="finalMatchOutput"></div>
       <div id="playoffBracketOutput"></div>
     </div>
@@ -4450,7 +4877,6 @@ header('Expires: 0');
       <div class="workspaceHeaderIcon" aria-hidden="true">&#9881;</div>
       <div><h3>Users</h3><div class="hint">Create accounts, manage access, and reset temporary passwords.</div></div>
     </div>
-    <button id="logoutBtn" class="secondary">Logout</button>
   </div>
 
   <div class="row workspacePanel" style="margin-top:18px;">
@@ -4568,7 +4994,7 @@ header('Expires: 0');
     <div id="historyCalendarGrid" class="historyCalendarGrid" role="grid" aria-label="Tournament history calendar"></div>
     <div id="historyCalendarStatus" class="historyCalendarStatus"></div>
   </div>
-  <div class="row workspacePanel">
+  <div class="row workspacePanel hidden" id="historyTournamentPanel" hidden>
     <div class="col">
       <label for="historyTournamentSelect">Tournaments on Selected Date</label>
       <select id="historyTournamentSelect">
@@ -4576,7 +5002,7 @@ header('Expires: 0');
       </select>
     </div>
   </div>
-  <div class="workspacePanel" id="historySchedulePanel">
+  <div class="workspacePanel hidden" id="historySchedulePanel" hidden>
     <div class="playerStatsSectionHeader">
       <h4>Schedule a Tournament</h4>
       <span class="pill" id="historyScheduleDateLabel">Select a date</span>
@@ -4593,7 +5019,7 @@ header('Expires: 0');
     </div>
     <div id="historyScheduleStatus" class="authStatus"></div>
   </div>
-  <div id="historyOutput" class="dataSurface"></div>
+  <div id="historyOutput" class="dataSurface hidden" hidden></div>
 </div>
 
 <script>
@@ -4710,6 +5136,8 @@ const STORAGE_KEYS = {
   const scheduleFinalsArea = document.getElementById('scheduleFinalsArea');
   const scheduleFinalsStatus = document.getElementById('scheduleFinalsStatus');
   const scheduleFinalsFormat = document.getElementById('scheduleFinalsFormat');
+  const shareFinalsScheduleBtn = document.getElementById('shareFinalsScheduleBtn');
+  const finalsScheduleShareStatus = document.getElementById('finalsScheduleShareStatus');
   const pointsTableOutput = document.getElementById('pointsTableOutput');
   const finalLeaderboardOutput = document.getElementById('finalLeaderboardOutput');
   const leaderboardYearSelect = document.getElementById('leaderboardYearSelect');
@@ -4723,6 +5151,7 @@ const STORAGE_KEYS = {
   const playerStatsMonthSelect = document.getElementById('playerStatsMonthSelect');
   const playerStatsPeriodSummary = document.getElementById('playerStatsPeriodSummary');
   const historyTournamentSelect = document.getElementById('historyTournamentSelect');
+  const historyTournamentPanel = document.getElementById('historyTournamentPanel');
   const historyOutput = document.getElementById('historyOutput');
   const historyCalendarGrid = document.getElementById('historyCalendarGrid');
   const historyCalendarMonth = document.getElementById('historyCalendarMonth');
@@ -4730,6 +5159,7 @@ const STORAGE_KEYS = {
   const historyPreviousMonthBtn = document.getElementById('historyPreviousMonthBtn');
   const historyNextMonthBtn = document.getElementById('historyNextMonthBtn');
   const historyScheduleDateLabel = document.getElementById('historyScheduleDateLabel');
+  const historySchedulePanel = document.getElementById('historySchedulePanel');
   const historyScheduledTournamentName = document.getElementById('historyScheduledTournamentName');
   const historyScheduleTournamentBtn = document.getElementById('historyScheduleTournamentBtn');
   const historyScheduleStatus = document.getElementById('historyScheduleStatus');
@@ -4761,6 +5191,7 @@ const STORAGE_KEYS = {
   // active view
   let currentView = 'tournament';
   let historyCalendarCursor = null;
+  let historyDateSelectionActive = false;
   let leaderboardControlsInitialized = false;
   let scoreRenderTimer = null;
   let playerPhotoLookupCache = null;
@@ -4853,15 +5284,25 @@ const STORAGE_KEYS = {
     bottomNavButtons().forEach(btn => {
       const v = btn.dataset.view;
       if (v === 'tournament' || v === 'players' || v === 'pairing' || v === 'shuttles' || v === 'leaderboard' || v === 'stats' || v === 'history') {
+        btn.hidden = false;
+        btn.classList.remove('hidden');
         btn.disabled = false;
       } else if (v === 'users') {
         const isAdmin = !!currentAuthSession()?.isAdmin;
         btn.disabled = !isAdmin;
         btn.hidden = !isAdmin;
+        btn.classList.toggle('hidden', !isAdmin);
       } else if (v === 'groups') {
+        btn.hidden = !hasTournament;
+        btn.classList.toggle('hidden', !hasTournament);
         btn.disabled = !(groupsEnabled && teamsBuiltForCount);
+      } else if (v === 'schedule' || v === 'points') {
+        btn.hidden = !hasSchedule;
+        btn.classList.toggle('hidden', !hasSchedule);
+        btn.disabled = !hasSchedule;
       } else {
-        // schedule/points/finals
+        btn.hidden = !hasTournament;
+        btn.classList.toggle('hidden', !hasTournament);
         btn.disabled = !hasSchedule;
       }
 
@@ -4876,9 +5317,11 @@ const STORAGE_KEYS = {
     if (view === 'final' || view === 'playoff') view = 'schedule';
     if (view === 'teams') view = 'tournament';
     if (view === 'users' && !currentAuthSession()?.isAdmin) view = 'tournament';
+    const hasSchedule = !!tournament && Array.isArray(tournament?.matches) && tournament.matches.length > 0;
+    if ((view === 'schedule' || view === 'points') && !hasSchedule) view = 'tournament';
     // Guard against disabled navigation
     const btn = document.querySelector(`.bottomNavBtn[data-view="${view}"]`);
-    if (btn && btn.disabled) return;
+    if (btn && (btn.disabled || btn.hidden)) return;
 
     currentView = view;
     localStorage.setItem(STORAGE_KEYS.activeView, view);
@@ -4925,8 +5368,7 @@ const STORAGE_KEYS = {
       renderSelectedPlayerStats();
     }
     if (view === 'history') {
-      refreshHistoryDropdown();
-      renderSelectedHistoryTournament();
+      showHistoryCalendarOnly();
     }
     if (view === 'teams') {
       renderTeamsPreview();
@@ -5788,6 +6230,18 @@ const STORAGE_KEYS = {
     return tournamentPhotos[key] || getPlayerPhotoLookup()[key] || '';
   }
 
+  function getPlayerPhotoMapForPlayers(players, preferredPhotos = {}) {
+    const preferred = normalizePlayerPhotoMap(preferredPhotos);
+    const scopedPhotos = {};
+    uniqueNormalizedPlayerNames(players || []).forEach(player => {
+      const key = playerPhotoKey(player);
+      if (!key) return;
+      const photo = preferred[key] || getPlayerPhoto(player);
+      if (photo) scopedPhotos[key] = photo;
+    });
+    return scopedPhotos;
+  }
+
   function setPlayerPhoto(playerName, dataUrl) {
     const key = playerPhotoKey(playerName);
     if (!key) return;
@@ -5905,13 +6359,14 @@ const STORAGE_KEYS = {
     localStorage.setItem(STORAGE_KEYS.playerListPrefix + listId, JSON.stringify({
       name,
       players,
-      playerPhotos: getActivePlayerPhotos(),
+      playerPhotos: getPlayerPhotoMapForPlayers(players, getActivePlayerPhotos()),
     }));
     invalidatePlayerPhotoLookup();
     const idx = getIndex(STORAGE_KEYS.playerListsIndex);
     if (!idx.includes(listId)) idx.push(listId);
     idx.sort();
     setIndex(STORAGE_KEYS.playerListsIndex, idx);
+    return listId;
   }
 
   function loadPlayerList(listId) {
@@ -5950,7 +6405,7 @@ const STORAGE_KEYS = {
 
     // player lists
     const pIdx = getIndex(STORAGE_KEYS.playerListsIndex);
-    playerListSelect.innerHTML = '<option value="">-- Select --</option>';
+    playerListSelect.innerHTML = '<option value="">-- Select Existing List --</option>';
     pIdx.forEach(id => {
       const pl = loadPlayerList(id);
       if (!pl) return;
@@ -5968,7 +6423,7 @@ const STORAGE_KEYS = {
   // Each team accumulates:
   // - totalPoints: winner=10, runner-up=5, unqualified/non-playoff=2 per completed tournament
   // - winnerCount / runnerUpCount
-  // - gamesPlayed: total league/group matches played across tournaments
+  // - gamesPlayed: total scored matches played across schedule, qualifier, and final rounds
   // - daysPlayed: tournaments participated in (1 per tournament where team had >=1 match)
   // ----------------------------
   /**
@@ -5990,6 +6445,9 @@ const STORAGE_KEYS = {
         runnerUpCount: 0,
         gamesPlayed: 0,
         daysPlayed: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
       };
     }
     return board[key];
@@ -6021,14 +6479,48 @@ const STORAGE_KEYS = {
     return participants;
   }
 
+  function createLeaderboardPlayerResult() {
+    return {
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+    };
+  }
+
+  function computeLeaderboardPlayerResults(t) {
+    const results = new Map();
+    const addResult = (player, scoredFor, scoredAgainst) => {
+      const name = normalizePlayerName(player);
+      const key = lower(name);
+      if (!key) return;
+      if (!results.has(key)) results.set(key, createLeaderboardPlayerResult());
+      const row = results.get(key);
+      row.gamesPlayed += 1;
+      if (scoredFor > scoredAgainst) row.wins += 1;
+      else if (scoredFor < scoredAgainst) row.losses += 1;
+      else row.ties += 1;
+    };
+
+    getAllScoredMatchesForStats(t).forEach(match => {
+      const score1 = Number(match.score1);
+      const score2 = Number(match.score2);
+      getMatchParticipantPlayersForStats(t, match.team1).forEach(player => addResult(player, score1, score2));
+      getMatchParticipantPlayersForStats(t, match.team2).forEach(player => addResult(player, score2, score1));
+    });
+    return results;
+  }
+
+  function leaderboardWinRate(row) {
+    return row?.gamesPlayed ? Math.round(((row.wins || 0) / row.gamesPlayed) * 100) : 0;
+  }
+
   function computeTournamentContribution(t) {
     if (!t) return null;
 
     const teams = t.teams || [];
     const teamPlayers = t.teamPlayers || {};
-    const standings = computeStandingsFromMatches(teams, t.matches || []);
-
-    const playedMap = new Map(standings.map(s => [s.team, s.played]));
+    const playerResults = computeLeaderboardPlayerResults(t);
     const finalResult = t.finalResult || computeFinalResultFromFinalMatch(t.finalMatch);
     const playoffParticipants = getPlayoffParticipantTeams(t);
 
@@ -6038,15 +6530,15 @@ const STORAGE_KEYS = {
       const assigned = (teamPlayers[team] || []).map(normalizePlayerName).filter(Boolean);
       if (assigned.length === 0) return;
 
-      const gamesPlayed = playedMap.get(team) ?? 0;
-      const daysPlayed = gamesPlayed > 0 ? 1 : 0;
-
       const isWinner = finalResult?.winner === team;
       const isRunner = finalResult?.runnerUp === team;
-      const playedDayPoints = daysPlayed > 0 && !isWinner && !isRunner ? 2 : 0;
-      const totalPoints = (isWinner ? 10 : 0) + (isRunner ? 5 : 0) + playedDayPoints;
 
       assigned.forEach(player => {
+        const playerResult = playerResults.get(lower(player)) || createLeaderboardPlayerResult();
+        const gamesPlayed = playerResult.gamesPlayed || 0;
+        const daysPlayed = gamesPlayed > 0 ? 1 : 0;
+        const playedDayPoints = daysPlayed > 0 && !isWinner && !isRunner ? 2 : 0;
+        const totalPoints = (isWinner ? 10 : 0) + (isRunner ? 5 : 0) + playedDayPoints;
         if (!perPlayer[player]) {
           perPlayer[player] = {
             player,
@@ -6055,6 +6547,9 @@ const STORAGE_KEYS = {
             runnerUpCount: 0,
             gamesPlayed: 0,
             daysPlayed: 0,
+            wins: 0,
+            losses: 0,
+            ties: 0,
           };
         }
         perPlayer[player].totalPoints += totalPoints;
@@ -6062,6 +6557,9 @@ const STORAGE_KEYS = {
         perPlayer[player].runnerUpCount += isRunner ? 1 : 0;
         perPlayer[player].gamesPlayed += gamesPlayed;
         perPlayer[player].daysPlayed += daysPlayed;
+        perPlayer[player].wins += playerResult.wins || 0;
+        perPlayer[player].losses += playerResult.losses || 0;
+        perPlayer[player].ties += playerResult.ties || 0;
       });
     });
 
@@ -6082,6 +6580,9 @@ const STORAGE_KEYS = {
         r.runnerUpCount += row.runnerUpCount;
         r.gamesPlayed += row.gamesPlayed;
         r.daysPlayed += row.daysPlayed;
+        r.wins += row.wins || 0;
+        r.losses += row.losses || 0;
+        r.ties += row.ties || 0;
       });
     });
     return board;
@@ -6159,6 +6660,9 @@ const STORAGE_KEYS = {
         total.runnerUpCount += row.runnerUpCount;
         total.gamesPlayed += row.gamesPlayed;
         total.daysPlayed += row.daysPlayed;
+        total.wins += row.wins || 0;
+        total.losses += row.losses || 0;
+        total.ties += row.ties || 0;
       });
     });
     return Object.values(board).sort((a, b) => {
@@ -6403,13 +6907,14 @@ const STORAGE_KEYS = {
     const tableWidth = width - margin * 2;
     const tableY = headerHeight;
     const columns = [
-      { label: 'Rank', x: tableX, w: 96, align: 'center' },
-      { label: 'Player', x: tableX + 96, w: 494, align: 'left' },
-      { label: 'Points', x: tableX + 590, w: 150, align: 'center' },
-      { label: 'Titles', x: tableX + 740, w: 140, align: 'center' },
-      { label: 'Runner-up', x: tableX + 880, w: 154, align: 'center' },
-      { label: 'Games', x: tableX + 1034, w: 150, align: 'center' },
-      { label: 'Days', x: tableX + 1184, w: 120, align: 'center' },
+      { label: 'Rank', x: tableX, w: 88, align: 'center' },
+      { label: 'Player', x: tableX + 88, w: 400, align: 'left' },
+      { label: 'Points', x: tableX + 488, w: 136, align: 'center' },
+      { label: 'Titles', x: tableX + 624, w: 130, align: 'center' },
+      { label: 'Runner-up', x: tableX + 754, w: 154, align: 'center' },
+      { label: 'Games', x: tableX + 908, w: 136, align: 'center' },
+      { label: 'Win %', x: tableX + 1044, w: 130, align: 'center' },
+      { label: 'Days', x: tableX + 1174, w: 130, align: 'center' },
     ];
 
     drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight + visibleRows.length * rowHeight, 18);
@@ -6449,7 +6954,7 @@ const STORAGE_KEYS = {
       ctx.font = '850 21px Inter, Segoe UI, sans-serif';
       drawWrappedCanvasText(ctx, row.player, columns[1].x + 80, y + 32, columns[1].w - 102, 22, 2);
 
-      [row.totalPoints, row.winnerCount, row.runnerUpCount, row.gamesPlayed, row.daysPlayed].forEach((value, valueIndex) => {
+      [row.totalPoints, row.winnerCount, row.runnerUpCount, row.gamesPlayed, `${leaderboardWinRate(row)}%`, row.daysPlayed].forEach((value, valueIndex) => {
         const column = columns[valueIndex + 2];
         ctx.fillStyle = valueIndex === 0 ? '#115e59' : '#334155';
         ctx.font = valueIndex === 0 ? '900 24px Inter, Segoe UI, sans-serif' : '800 21px Inter, Segoe UI, sans-serif';
@@ -6529,6 +7034,417 @@ const STORAGE_KEYS = {
     }
   }
 
+  function finalsScheduleFilename() {
+    const name = normalizePlayerName(tournament?.name || 'finals-schedule')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'finals-schedule';
+    return `badminton-finals-schedule-${name}.png`;
+  }
+
+  function finalsScheduleFormatLabel() {
+    if (!tournament) return 'Finals';
+    if (tournament.type === 'Knockout') return 'Knockout Final';
+    return getPlayoffFormatLabel(tournament.playoffFormat || 'Semifinals');
+  }
+
+  function finalsMatchStatus(match) {
+    if (!match) return 'Pending';
+    if (!hasNumericScore(match.score1) || !hasNumericScore(match.score2)) return 'Pending';
+    const score1 = Number(match.score1);
+    const score2 = Number(match.score2);
+    if (score1 === score2) return 'Tie';
+    const winner = score1 > score2 ? match.team1 : match.team2;
+    return `Winner: ${getTeamDisplayName(winner)}`;
+  }
+
+  function finalsShareScore(match) {
+    if (!match || !hasNumericScore(match.score1) || !hasNumericScore(match.score2)) return 'vs';
+    return `${Number(match.score1)} - ${Number(match.score2)}`;
+  }
+
+  function getShareableFinalsFinalMatch() {
+    if (!tournament) return null;
+    const candidates = [
+      tournament.finalMatch,
+      tournament.knockout?.final,
+      ...(Array.isArray(tournament.matches) ? tournament.matches.filter(match => /final/i.test(match.stage || '')) : []),
+    ].filter(match => match?.team1 && match?.team2);
+
+    return candidates.find(match => hasNumericScore(match.score1) && hasNumericScore(match.score2))
+      || candidates[0]
+      || null;
+  }
+
+  function getFinalsScheduleAwardData() {
+    const finalMatch = getShareableFinalsFinalMatch();
+    const result = computeFinalResultFromFinalMatch(finalMatch);
+    if (!finalMatch || !result) return null;
+
+    return {
+      finalMatch,
+      result,
+      score: finalsShareScore(finalMatch),
+      winnerName: getTeamDisplayName(result.winner),
+      runnerName: getTeamDisplayName(result.runnerUp),
+      winnerPlayers: getTeamDisplayPlayers(result.winner).map(normalizePlayerName).filter(Boolean),
+      runnerPlayers: getTeamDisplayPlayers(result.runnerUp).map(normalizePlayerName).filter(Boolean),
+    };
+  }
+
+  function getShareableFinalsScheduleRows() {
+    if (!tournament || scheduleFinalsArea?.hidden) return [];
+    syncVisibleScoreInputsToTournament();
+
+    const rows = [];
+    const seen = new Set();
+    const addMatch = (match, fallbackStage = '') => {
+      if (!match?.team1 || !match?.team2) return;
+      const stage = match.stage || fallbackStage || 'Final';
+      const key = [String(match.id || ''), stage, match.team1, match.team2].join('||');
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push({
+        id: String(match.id || ''),
+        stage,
+        team1: getTeamDisplayName(match.team1),
+        team2: getTeamDisplayName(match.team2),
+        score: finalsShareScore(match),
+        status: finalsMatchStatus(match),
+      });
+    };
+
+    if (tournament.type === 'Knockout') {
+      addMatch(tournament.finalMatch || (tournament.matches || []).find(match => match.stage === 'Final'), 'Final');
+      return rows;
+    }
+
+    const knockout = tournament.knockout || {};
+    const playoffFormat = tournament.playoffFormat || 'Semifinals';
+    if (playoffFormat === 'Semifinals') {
+      addMatch(knockout.semifinal1, 'Semifinal 1');
+      addMatch(knockout.semifinal2, 'Semifinal 2');
+    } else if (playoffFormat === 'Qualifiers') {
+      addMatch(knockout.qualifier1, 'Qualifier 1');
+      addMatch(knockout.eliminator, 'Eliminator');
+      addMatch(knockout.qualifier2, 'Qualifier 2');
+    }
+    addMatch(tournament.finalMatch || knockout.final, 'Final');
+    return rows;
+  }
+
+  function refreshFinalsScheduleShareButton() {
+    if (!shareFinalsScheduleBtn) return;
+    shareFinalsScheduleBtn.disabled = getShareableFinalsScheduleRows().length === 0;
+  }
+
+  function drawFinalsShareCupIcon(ctx, x, y, size) {
+    const cupGradient = ctx.createLinearGradient(x, y, x + size, y + size);
+    cupGradient.addColorStop(0, '#fde68a');
+    cupGradient.addColorStop(0.45, '#f59e0b');
+    cupGradient.addColorStop(1, '#b45309');
+    ctx.save();
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = Math.max(4, size * 0.07);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(x + size * 0.25, y + size * 0.34, size * 0.18, Math.PI * 0.45, Math.PI * 1.55);
+    ctx.arc(x + size * 0.75, y + size * 0.34, size * 0.18, Math.PI * 1.45, Math.PI * 0.55, true);
+    ctx.stroke();
+    ctx.fillStyle = cupGradient;
+    ctx.beginPath();
+    ctx.moveTo(x + size * 0.24, y + size * 0.16);
+    ctx.quadraticCurveTo(x + size * 0.5, y + size * 0.05, x + size * 0.76, y + size * 0.16);
+    ctx.lineTo(x + size * 0.66, y + size * 0.58);
+    ctx.quadraticCurveTo(x + size * 0.5, y + size * 0.72, x + size * 0.34, y + size * 0.58);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(x + size * 0.43, y + size * 0.63, size * 0.14, size * 0.18);
+    drawCanvasRoundRect(ctx, x + size * 0.27, y + size * 0.8, size * 0.46, size * 0.13, size * 0.04);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawFinalsSharePlateIcon(ctx, x, y, size) {
+    ctx.save();
+    const cx = x + size / 2;
+    const cy = y + size / 2;
+    const plateGradient = ctx.createRadialGradient(cx - size * 0.15, cy - size * 0.16, size * 0.08, cx, cy, size * 0.48);
+    plateGradient.addColorStop(0, '#ffffff');
+    plateGradient.addColorStop(0.5, '#e2e8f0');
+    plateGradient.addColorStop(1, '#94a3b8');
+    ctx.fillStyle = plateGradient;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.42, size * 0.31, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = Math.max(3, size * 0.045);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.28, size * 0.18, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = Math.max(2, size * 0.035);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFinalsShareAwardPlayers(ctx, players, imageByPlayer, x, y, width) {
+    const visiblePlayers = (players || []).slice(0, 3);
+    if (!visiblePlayers.length) return;
+    const avatarSize = 56;
+    const slotWidth = width / visiblePlayers.length;
+    visiblePlayers.forEach((player, index) => {
+      const centerX = x + slotWidth * index + slotWidth / 2;
+      drawLeaderboardAvatar(ctx, player, imageByPlayer.get(lower(player)), centerX - avatarSize / 2, y, avatarSize);
+      ctx.fillStyle = '#15201d';
+      ctx.font = '800 15px Inter, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ellipsizeCanvasText(ctx, player, slotWidth - 12), centerX, y + avatarSize + 22);
+    });
+  }
+
+  function drawFinalsShareAwardCard(ctx, award, imageByPlayer, kind, x, y, width, height) {
+    const winner = kind === 'winner';
+    const border = winner ? '#f59e0b' : '#94a3b8';
+    const bg = winner ? '#fffbeb' : '#f8fafc';
+    const label = winner ? 'Winner - Champion Cup' : 'Runner-up Plate';
+    const name = winner ? award.winnerName : award.runnerName;
+    const players = winner ? award.winnerPlayers : award.runnerPlayers;
+
+    drawCanvasRoundRect(ctx, x, y, width, height, 24);
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    if (winner) {
+      drawFinalsShareCupIcon(ctx, x + 28, y + 26, 78);
+    } else {
+      drawFinalsSharePlateIcon(ctx, x + 28, y + 26, 78);
+    }
+
+    ctx.fillStyle = winner ? '#92400e' : '#334155';
+    ctx.font = '900 20px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(label, x + 126, y + 48);
+
+    ctx.fillStyle = '#15201d';
+    ctx.font = '900 27px Inter, Segoe UI, sans-serif';
+    drawWrappedCanvasText(ctx, name, x + 126, y + 86, width - 154, 30, 2);
+
+    ctx.fillStyle = winner ? '#b45309' : '#475569';
+    ctx.font = '800 17px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`Final score: ${award.score}`, x + 126, y + 148);
+
+    drawFinalsShareAwardPlayers(ctx, players, imageByPlayer, x + 28, y + height - 96, width - 56);
+  }
+
+  function drawFinalsScheduleAwards(ctx, award, imageByPlayer, x, y, width, height) {
+    const gap = 24;
+    const cardWidth = (width - gap) / 2;
+    drawFinalsShareAwardCard(ctx, award, imageByPlayer, 'winner', x, y, cardWidth, height);
+    drawFinalsShareAwardCard(ctx, award, imageByPlayer, 'runner', x + cardWidth + gap, y, cardWidth, height);
+  }
+
+  async function createFinalsScheduleShareBlob(rows) {
+    const visibleRows = Array.isArray(rows) && rows.length ? rows : getShareableFinalsScheduleRows();
+    if (!visibleRows.length) throw new Error('No finals schedule is available to share.');
+
+    const award = getFinalsScheduleAwardData();
+    const awardPlayers = award
+      ? [...new Set([...award.winnerPlayers, ...award.runnerPlayers].map(normalizePlayerName).filter(Boolean))]
+      : [];
+    const awardImageEntries = await Promise.all(awardPlayers.map(async player => [
+      lower(player),
+      await loadImageForCanvas(getPlayerPhoto(player)),
+    ]));
+    const awardImageByPlayer = new Map(awardImageEntries);
+
+    const width = 1400;
+    const margin = 48;
+    const headerHeight = 178;
+    const awardsHeight = award ? 342 : 0;
+    const awardCardHeight = 300;
+    const tableHeaderHeight = 58;
+    const rowHeight = 96;
+    const footerHeight = 58;
+    const height = headerHeight + awardsHeight + tableHeaderHeight + (visibleRows.length * rowHeight) + footerHeight + 32;
+    const scale = Math.min(2, Math.max(0.75, Math.min(window.devicePixelRatio || 2, 15000 / height)));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Your browser could not prepare the finals schedule image.');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#f4f7f6';
+    ctx.fillRect(0, 0, width, height);
+
+    const headerGradient = ctx.createLinearGradient(margin, 24, width - margin, headerHeight - 10);
+    headerGradient.addColorStop(0, '#115e59');
+    headerGradient.addColorStop(1, '#0f766e');
+    drawCanvasRoundRect(ctx, margin, 24, width - margin * 2, 130, 24);
+    ctx.fillStyle = headerGradient;
+    ctx.fill();
+
+    ctx.fillStyle = '#ecfeff';
+    ctx.font = '900 42px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(award ? 'Finals Result' : 'Finals Schedule', margin + 34, 80);
+    ctx.font = '700 22px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`${tournament?.name || 'Tournament'} - ${finalsScheduleFormatLabel()}`, margin + 34, 116);
+    ctx.font = '600 16px Inter, Segoe UI, sans-serif';
+    ctx.fillStyle = 'rgba(236, 254, 255, 0.82)';
+    const stamp = new Date().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    ctx.fillText(award
+      ? `Final score: ${award.score} - Generated ${stamp}`
+      : `${visibleRows.length} fixture${visibleRows.length === 1 ? '' : 's'} - Generated ${stamp}`,
+      margin + 34,
+      142
+    );
+
+    const tableX = margin;
+    const tableWidth = width - margin * 2;
+    if (award) {
+      drawFinalsScheduleAwards(ctx, award, awardImageByPlayer, tableX, headerHeight, tableWidth, awardCardHeight);
+    }
+
+    const tableY = headerHeight + awardsHeight;
+    const columns = [
+      { label: 'Stage', x: tableX, w: 210, align: 'left' },
+      { label: 'Team 1', x: tableX + 210, w: 350, align: 'left' },
+      { label: 'Score', x: tableX + 560, w: 150, align: 'center' },
+      { label: 'Team 2', x: tableX + 710, w: 350, align: 'left' },
+      { label: 'Status', x: tableX + 1060, w: 244, align: 'left' },
+    ];
+
+    drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight + visibleRows.length * rowHeight, 18);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    drawCanvasRoundRect(ctx, tableX, tableY, tableWidth, tableHeaderHeight, 18);
+    ctx.fillStyle = '#0f766e';
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 16px Inter, Segoe UI, sans-serif';
+    ctx.textBaseline = 'middle';
+    columns.forEach(column => {
+      ctx.textAlign = column.align === 'center' ? 'center' : 'left';
+      const textX = column.align === 'center' ? column.x + column.w / 2 : column.x + 18;
+      ctx.fillText(column.label.toUpperCase(), textX, tableY + tableHeaderHeight / 2 + 1);
+    });
+
+    visibleRows.forEach((row, index) => {
+      const y = tableY + tableHeaderHeight + index * rowHeight;
+      ctx.fillStyle = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+      if (/final/i.test(row.stage)) ctx.fillStyle = '#fffbeb';
+      ctx.fillRect(tableX, y, tableWidth, rowHeight);
+      ctx.strokeStyle = '#d7e1df';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tableX, y + rowHeight);
+      ctx.lineTo(tableX + tableWidth, y + rowHeight);
+      ctx.stroke();
+
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#115e59';
+      ctx.font = '850 19px Inter, Segoe UI, sans-serif';
+      drawWrappedCanvasText(ctx, row.stage, columns[0].x + 18, y + 38, columns[0].w - 32, 22, 2);
+
+      ctx.fillStyle = '#15201d';
+      ctx.font = '800 20px Inter, Segoe UI, sans-serif';
+      drawWrappedCanvasText(ctx, row.team1, columns[1].x + 18, y + 34, columns[1].w - 34, 22, 2);
+      drawWrappedCanvasText(ctx, row.team2, columns[3].x + 18, y + 34, columns[3].w - 34, 22, 2);
+
+      ctx.fillStyle = row.score === 'vs' ? '#64748b' : '#115e59';
+      ctx.font = row.score === 'vs' ? '850 22px Inter, Segoe UI, sans-serif' : '900 25px Inter, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(row.score, columns[2].x + columns[2].w / 2, y + rowHeight / 2 + 2);
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = row.status.startsWith('Winner:') ? '#166534' : '#64748b';
+      ctx.font = '800 18px Inter, Segoe UI, sans-serif';
+      drawWrappedCanvasText(ctx, row.status, columns[4].x + 18, y + 38, columns[4].w - 34, 22, 2);
+    });
+
+    const footerY = tableY + tableHeaderHeight + visibleRows.length * rowHeight + 26;
+    ctx.fillStyle = '#64736f';
+    ctx.font = '700 18px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Badminton Tournament Manager', width / 2, footerY);
+
+    return canvasToPngBlob(canvas);
+  }
+
+  async function shareFinalsScheduleImage() {
+    const rows = getShareableFinalsScheduleRows();
+    if (!rows.length) {
+      setAuthStatus(finalsScheduleShareStatus, 'No finals schedule is available to share.', 'error');
+      return;
+    }
+
+    const filename = finalsScheduleFilename();
+    const originalHtml = shareFinalsScheduleBtn?.innerHTML || '';
+    if (shareFinalsScheduleBtn) {
+      shareFinalsScheduleBtn.disabled = true;
+      shareFinalsScheduleBtn.innerHTML = '<span aria-hidden="true">&#9203;</span><span class="srOnly">Preparing share image</span>';
+    }
+    setAuthStatus(finalsScheduleShareStatus, 'Preparing high-quality finals schedule image...');
+
+    try {
+      const blob = await createFinalsScheduleShareBlob(rows);
+      const award = getFinalsScheduleAwardData();
+      const title = award
+        ? `${tournament?.name || 'Badminton'} Finals Result`
+        : `${tournament?.name || 'Badminton'} Finals Schedule`;
+      const text = award
+        ? `${award.winnerName} champion, ${award.runnerName} runner-up`
+        : `${tournament?.name || 'Badminton'} finals schedule`;
+
+      if (typeof File !== 'undefined' && navigator.share && navigator.canShare) {
+        try {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ title, text, files: [file] });
+            setAuthStatus(finalsScheduleShareStatus, 'Finals schedule image opened in your share sheet.', 'success');
+            return;
+          }
+        } catch {
+          // Fall back to clipboard/download below.
+        }
+      }
+
+      if (window.isSecureContext && navigator.clipboard && window.ClipboardItem) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          setAuthStatus(finalsScheduleShareStatus, 'Finals schedule image copied. Paste it into WhatsApp or any chat.', 'success');
+          return;
+        } catch {
+          // Fall back to download below.
+        }
+      }
+
+      downloadBlob(blob, filename);
+      setAuthStatus(finalsScheduleShareStatus, 'Finals schedule image downloaded. Attach it in WhatsApp or any app.', 'success');
+    } catch (error) {
+      if (error?.name === 'AbortError') {
+        setAuthStatus(finalsScheduleShareStatus, 'Share cancelled.');
+      } else {
+        setAuthStatus(finalsScheduleShareStatus, error?.message || 'Could not share the finals schedule image.', 'error');
+      }
+    } finally {
+      if (shareFinalsScheduleBtn) {
+        shareFinalsScheduleBtn.innerHTML = originalHtml;
+        refreshFinalsScheduleShareButton();
+      }
+    }
+  }
+
   function renderGlobalLeaderboard(rows) {
     finalLeaderboardOutput.innerHTML = '';
     const { periodLabel, tournamentCount } = getLeaderboardPeriodDetails();
@@ -6544,7 +7460,7 @@ const STORAGE_KEYS = {
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const trh = document.createElement('tr');
-    const leaderboardHeaders = ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Days Played'];
+    const leaderboardHeaders = ['Pos', 'Player', 'Total Points', 'Titles (Winner)', 'Runner-up', 'Games Played', 'Win %', 'Days Played'];
     leaderboardHeaders.forEach(h => {
       const th = document.createElement('th');
       th.scope = 'col';
@@ -6564,6 +7480,7 @@ const STORAGE_KEYS = {
         r.winnerCount,
         r.runnerUpCount,
         r.gamesPlayed,
+        `${leaderboardWinRate(r)}%`,
         r.daysPlayed,
       ];
       cells.forEach((c, cellIndex) => {
@@ -6731,6 +7648,27 @@ const STORAGE_KEYS = {
     return getIndex(STORAGE_KEYS.tournamentsIndex).find(item => item.id === id) || null;
   }
 
+  function tournamentStatsDateKey(t) {
+    const entry = getTournamentEntryForStats(t?.id);
+    return entry?.scheduledDate
+      || t?.scheduledDate
+      || historyDateKeyFromTimestamp(entry?.createdAt || entry?.updatedAt || t?.createdAt || t?.updatedAt);
+  }
+
+  function tournamentStatsDateMs(t) {
+    const entry = getTournamentEntryForStats(t?.id);
+    const dateKey = tournamentStatsDateKey(t);
+    const date = historyDateFromKey(dateKey);
+    if (date) return date.getTime();
+    return Number(entry?.createdAt || entry?.updatedAt || t?.createdAt || t?.updatedAt || 0);
+  }
+
+  function tournamentStatsDateLabelFromKey(dateKey, fallbackMs = 0) {
+    const date = historyDateFromKey(dateKey);
+    if (date) return date.toLocaleDateString();
+    return fallbackMs ? formatHistoryShortDate(fallbackMs) : '-';
+  }
+
   function incrementCount(map, key) {
     const normalized = normalizePlayerName(key);
     if (!normalized) return;
@@ -6844,6 +7782,14 @@ const STORAGE_KEYS = {
     return (row?.pointsFor || 0) - (row?.pointsAgainst || 0);
   }
 
+  function relationTournamentCount(detail) {
+    return new Set(
+      (detail?.fixtures || [])
+        .map(fixture => String(fixture?.tournamentId || '').trim())
+        .filter(Boolean)
+    ).size;
+  }
+
   function topStatsPairRecord(records) {
     return Object.values(records || {})
       .sort((a, b) =>
@@ -6861,10 +7807,14 @@ const STORAGE_KEYS = {
     const opponentPair = opponentPlayers.length ? opponentPlayers.join(' / ') : getHistoricalParticipantDisplayName(t, side.opponentTeam);
     const playerScore = Number(side.playerScore);
     const opponentScore = Number(side.opponentScore);
+    const playedDateKey = tournamentStatsDateKey(t);
+    const playedAt = tournamentStatsDateMs(t);
     return {
       tournamentId: t.id,
       tournamentName: t.name || 'Saved Tournament',
       updatedAt: getTournamentEntryForStats(t.id)?.updatedAt || 0,
+      playedDateKey,
+      playedAt,
       stage: match.stage || 'Match',
       matchId: String(match.id || ''),
       playerTeam: side.playerTeam,
@@ -6894,10 +7844,15 @@ const STORAGE_KEYS = {
 
     const finalResult = getHistoricalFinalResult(t);
     const contribution = getPlayerContributionForStats(t, playerLower);
+    const playedDateKey = tournamentStatsDateKey(t);
+    const playedAt = tournamentStatsDateMs(t);
     const summary = {
       id: t.id,
       name: t.name || 'Saved Tournament',
       updatedAt: getTournamentEntryForStats(t.id)?.updatedAt || 0,
+      playedDateKey,
+      playedAt,
+      playedDateLabel: tournamentStatsDateLabelFromKey(playedDateKey, playedAt),
       teams,
       matchesPlayed: 0,
       wins: 0,
@@ -7041,7 +7996,11 @@ const STORAGE_KEYS = {
 
     stats.pointDiff = stats.pointsFor - stats.pointsAgainst;
     stats.winRate = stats.matchesPlayed > 0 ? Math.round((stats.wins / stats.matchesPlayed) * 100) : 0;
-    stats.tournaments.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    stats.tournaments.sort((a, b) =>
+      (b.playedAt || b.updatedAt || 0) - (a.playedAt || a.updatedAt || 0)
+      || String(b.playedDateKey || '').localeCompare(String(a.playedDateKey || ''))
+      || a.name.localeCompare(b.name)
+    );
     return stats;
   }
 
@@ -7085,7 +8044,7 @@ const STORAGE_KEYS = {
     const thead = document.createElement('thead');
     const header = document.createElement('tr');
     const pairLabel = 'Top Opponent Pair';
-    ['Name', 'Matches', 'Record', 'Win %', 'PF-PA', pairLabel].forEach(label => {
+    ['Name', 'Matches', 'Tournaments', 'Record', 'Win %', 'PF-PA', pairLabel].forEach(label => {
       const th = document.createElement('th');
       th.scope = 'col';
       th.textContent = label;
@@ -7101,6 +8060,7 @@ const STORAGE_KEYS = {
       [
         row.name,
         row.matchesPlayed,
+        relationTournamentCount(row),
         formatStatsRecord(row),
         `${statsWinRate(row)}%`,
         `${row.pointsFor || 0}-${row.pointsAgainst || 0}`,
@@ -7123,7 +8083,8 @@ const STORAGE_KEYS = {
 
     const meta = document.createElement('div');
     meta.className = 'playerFixtureMeta';
-    meta.textContent = `${fixture.tournamentName} | ${fixture.stage} ${fixture.matchId}`;
+    const playedDate = tournamentStatsDateLabelFromKey(fixture.playedDateKey, fixture.playedAt);
+    meta.textContent = `${playedDate !== '-' ? `${playedDate} | ` : ''}${fixture.tournamentName} | ${fixture.stage} ${fixture.matchId}`;
 
     const teams = document.createElement('div');
     teams.className = 'playerFixtureTeams';
@@ -7170,6 +8131,7 @@ const STORAGE_KEYS = {
     summary.className = 'playerRelationSummary';
     [
       `${detail.matchesPlayed} match${detail.matchesPlayed === 1 ? '' : 'es'}`,
+      `${relationTournamentCount(detail)} tournament${relationTournamentCount(detail) === 1 ? '' : 's'}`,
       `${formatStatsRecord(detail)} record`,
       `${statsWinRate(detail)}% win`,
       `${statsPointDiff(detail)} PD`,
@@ -7182,39 +8144,8 @@ const STORAGE_KEYS = {
     header.append(titleBlock, summary);
     panel.appendChild(header);
 
-    const pairRows = relationDetailRows(detail.pairRecords);
-    if (pairRows.length) {
-      const analytics = document.createElement('div');
-      analytics.className = 'playerRelationAnalytics';
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const trh = document.createElement('tr');
-      const pairHeading = 'Opponent Pair';
-      [pairHeading, 'Matches', 'Record', 'Win %'].forEach(label => {
-        const th = document.createElement('th');
-        th.scope = 'col';
-        th.textContent = label;
-        trh.appendChild(th);
-      });
-      thead.appendChild(trh);
-      table.appendChild(thead);
-      const tbody = document.createElement('tbody');
-      pairRows.forEach(row => {
-        const tr = document.createElement('tr');
-        [row.name, row.matchesPlayed, formatStatsRecord(row), `${statsWinRate(row)}%`].forEach(value => {
-          const td = document.createElement('td');
-          td.textContent = value;
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      analytics.appendChild(table);
-      panel.appendChild(analytics);
-    }
-
     const fixtures = [...(detail.fixtures || [])].sort((a, b) =>
-      (b.updatedAt || 0) - (a.updatedAt || 0)
+      (b.playedAt || b.updatedAt || 0) - (a.playedAt || a.updatedAt || 0)
       || a.tournamentName.localeCompare(b.tournamentName)
       || a.matchId.localeCompare(b.matchId, undefined, { numeric: true })
     );
@@ -7264,52 +8195,100 @@ const STORAGE_KEYS = {
       parent.appendChild(section);
       return;
     }
-    const list = document.createElement('div');
-    list.className = 'playerRelationList';
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'playerRelationAnalytics playerRelationCombinedTable';
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const header = document.createElement('tr');
+    const pairLabel = 'Top Opponent Pair';
+    ['#', relationType === 'partner' ? 'Partner' : 'Opponent', 'Matches', 'Tournaments', 'Record', 'Win %', 'PF-PA', pairLabel, 'Fixtures'].forEach(label => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      header.appendChild(th);
+    });
+    thead.appendChild(header);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
     const detailHost = document.createElement('div');
     rows.forEach(([name, count], index) => {
-      const row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'playerRelationRow';
+      const detail = relationDetailForName(details, name) || {
+        name,
+        matchesPlayed: count,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        pointsFor: 0,
+        pointsAgainst: 0,
+        fixtures: [],
+        pairRecords: {},
+      };
+      const topPair = topStatsPairRecord(detail.pairRecords);
+      const row = document.createElement('tr');
       row.setAttribute('aria-expanded', 'false');
-      row.setAttribute('aria-label', `${title}: open fixtures for ${name}`);
-      const rank = document.createElement('span');
-      rank.className = 'playerRelationRank';
-      rank.textContent = `#${index + 1}`;
-      const player = document.createElement('div');
-      player.className = 'playerRelationName';
-      player.appendChild(createTeamPlayerTile(name));
-      const total = document.createElement('span');
-      total.className = 'playerRelationCount';
-      total.textContent = `${count} ${countLabel}`;
-      const detail = relationDetailForName(details, name);
-      const record = document.createElement('span');
-      record.className = 'playerRelationRecord';
-      record.textContent = detail ? `${formatStatsRecord(detail)} | ${statsWinRate(detail)}%` : '';
-      const metric = document.createElement('span');
-      metric.style.display = 'grid';
-      metric.style.justifyItems = 'end';
-      metric.style.gap = '3px';
-      metric.append(total, record);
-      row.append(rank, player, metric);
-      row.addEventListener('click', () => {
-        const active = row.classList.contains('isActive');
-        list.querySelectorAll('.playerRelationRow').forEach(item => {
+
+      const values = [
+        `#${index + 1}`,
+        null,
+        detail.matchesPlayed || count,
+        relationTournamentCount(detail),
+        formatStatsRecord(detail),
+        `${statsWinRate(detail)}%`,
+        `${detail.pointsFor || 0}-${detail.pointsAgainst || 0}`,
+        topPair ? `${topPair.name} (${topPair.matchesPlayed}, ${formatStatsRecord(topPair)})` : '-',
+        null,
+      ];
+
+      values.forEach((value, cellIndex) => {
+        const td = document.createElement('td');
+        if (cellIndex === 1) {
+          const playerButton = document.createElement('button');
+          playerButton.type = 'button';
+          playerButton.className = 'playerRelationTablePlayer';
+          playerButton.setAttribute('aria-label', `${title}: open fixtures for ${name}`);
+          playerButton.appendChild(createTeamPlayerTile(name));
+          td.appendChild(playerButton);
+          playerButton.addEventListener('click', () => toggleRelationDetail(row, detail, relationType));
+        } else if (cellIndex === 8) {
+          const action = document.createElement('button');
+          action.type = 'button';
+          action.className = 'secondary playerRelationTableAction';
+          action.textContent = 'View';
+          action.setAttribute('aria-label', `${title}: view fixtures for ${name}`);
+          td.appendChild(action);
+          action.addEventListener('click', () => toggleRelationDetail(row, detail, relationType));
+        } else {
+          td.textContent = value;
+        }
+        row.appendChild(td);
+      });
+
+      function toggleRelationDetail(activeRow, activeDetail, activeRelationType) {
+        const active = activeRow.classList.contains('isActive');
+        tbody.querySelectorAll('tr').forEach(item => {
           item.classList.remove('isActive');
           item.setAttribute('aria-expanded', 'false');
+          const action = item.querySelector('.playerRelationTableAction');
+          if (action) action.textContent = 'View';
         });
         if (active) {
           detailHost.innerHTML = '';
           return;
         }
-        row.classList.add('isActive');
-        row.setAttribute('aria-expanded', 'true');
-        renderPlayerRelationDetail(detailHost, detail, relationType);
-      });
-      list.appendChild(row);
+        activeRow.classList.add('isActive');
+        activeRow.setAttribute('aria-expanded', 'true');
+        const action = activeRow.querySelector('.playerRelationTableAction');
+        if (action) action.textContent = 'Hide';
+        renderPlayerRelationDetail(detailHost, activeDetail, activeRelationType);
+      }
+
+      tbody.appendChild(row);
     });
-    section.appendChild(list);
-    appendRelationAnalyticsTable(section, details, relationType);
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    section.appendChild(tableWrap);
     section.appendChild(detailHost);
     parent.appendChild(section);
   }
@@ -7320,7 +8299,7 @@ const STORAGE_KEYS = {
     table.className = 'playerStatsTable';
     const thead = document.createElement('thead');
     const header = document.createElement('tr');
-    ['Tournament', 'Team / Players', 'Result', 'Matches', 'Record', 'PF', 'PA', 'PD', 'Rank Pts'].forEach(label => {
+    ['Tournament', 'Date', 'Team / Players', 'Result', 'Matches', 'Record', 'PF', 'PA', 'PD', 'Rank Pts'].forEach(label => {
       const th = document.createElement('th');
       th.scope = 'col';
       th.textContent = label;
@@ -7335,6 +8314,7 @@ const STORAGE_KEYS = {
       const savedTournament = loadTournamentById(row.id);
       const values = [
         row.name,
+        row.playedDateLabel || tournamentStatsDateLabelFromKey(row.playedDateKey, row.playedAt),
         row.teams.length ? row.teams.map(team => getHistoricalTeamDisplayName(savedTournament, team)).join(', ') : '-',
       ];
       values.forEach(value => {
@@ -7450,10 +8430,10 @@ const STORAGE_KEYS = {
 
     const split = document.createElement('div');
     split.className = 'playerStatsSplit';
-    const partnerRows = topCountRows(stats.teammates, 8);
-    const opponentRows = topCountRows(stats.opponents, 8);
-    appendPlayerRelationPanel(split, 'Most Common Partners', partnerRows, 'matches', 'No doubles partner data yet.', stats.partnerDetails, 'partner');
-    appendPlayerRelationPanel(split, 'Most Faced Opponents', opponentRows, 'matches', 'No opponent data yet.', stats.opponentDetails, 'opponent');
+    const partnerRows = relationDetailRows(stats.partnerDetails).slice(0, 8).map(row => [row.name, row.matchesPlayed || 0]);
+    const opponentRows = relationDetailRows(stats.opponentDetails).slice(0, 8).map(row => [row.name, row.matchesPlayed || 0]);
+    appendPlayerRelationPanel(split, 'Most Common Partners', partnerRows, 'games', 'No doubles partner data yet.', stats.partnerDetails, 'partner');
+    appendPlayerRelationPanel(split, 'Most Faced Opponents', opponentRows, 'games', 'No opponent data yet.', stats.opponentDetails, 'opponent');
     playerStatsOutput.appendChild(split);
 
     const note = document.createElement('div');
@@ -8067,6 +9047,37 @@ const STORAGE_KEYS = {
       .sort((a, b) => Number(b.createdAt || b.updatedAt || 0) - Number(a.createdAt || a.updatedAt || 0));
   }
 
+  function setHistoryElementHidden(el, hidden) {
+    if (!el) return;
+    el.classList.toggle('hidden', hidden);
+    el.hidden = hidden;
+  }
+
+  function showHistoryCalendarOnly() {
+    historyDateSelectionActive = false;
+    localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
+    if (historyTournamentSelect) {
+      historyTournamentSelect.value = '';
+      historyTournamentSelect.disabled = true;
+    }
+    if (historyOutput) historyOutput.innerHTML = '';
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
+    renderHistoryCalendar();
+  }
+
+  function selectHistoryDate(key) {
+    historyDateSelectionActive = true;
+    localStorage.setItem(STORAGE_KEYS.historyDate, key);
+    localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
+    if (historyTournamentSelect) historyTournamentSelect.value = '';
+    if (historyOutput) historyOutput.innerHTML = '';
+    setHistoryElementHidden(historyOutput, true);
+    if (historyScheduleStatus) setAuthStatus(historyScheduleStatus, '');
+    refreshHistoryDropdown();
+  }
+
   function ensureHistoryDateSelection(items) {
     let selectedDate = localStorage.getItem(STORAGE_KEYS.historyDate) || '';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
@@ -8082,7 +9093,13 @@ const STORAGE_KEYS = {
 
   function renderHistoryCalendar(items = getHistoryTournamentItems()) {
     if (!historyCalendarGrid || !historyCalendarMonth) return;
-    const selectedDate = ensureHistoryDateSelection(items);
+    const selectedDate = historyDateSelectionActive ? ensureHistoryDateSelection(items) : '';
+    if (!historyCalendarCursor) {
+      const storedDate = historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate) || '')
+        || historyDateFromKey(historyTournamentDateKey(items[0]) || '')
+        || new Date();
+      historyCalendarCursor = new Date(storedDate.getFullYear(), storedDate.getMonth(), 1);
+    }
     const cursor = historyCalendarCursor || new Date();
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
@@ -8116,10 +9133,7 @@ const STORAGE_KEYS = {
       button.setAttribute('aria-label', `${date.toLocaleDateString()}${count ? `, ${count} tournament${count === 1 ? '' : 's'}` : ', no tournaments'}`);
       button.title = count ? `${count} tournament${count === 1 ? '' : 's'}` : 'No tournaments';
       button.addEventListener('click', () => {
-        localStorage.setItem(STORAGE_KEYS.historyDate, key);
-        if (historyScheduleStatus) setAuthStatus(historyScheduleStatus, '');
-        refreshHistoryDropdown();
-        renderSelectedHistoryTournament();
+        selectHistoryDate(key);
       });
       historyCalendarGrid.appendChild(button);
     }
@@ -8127,7 +9141,9 @@ const STORAGE_KEYS = {
     const selectedCount = counts.get(selectedDate) || 0;
     const selected = historyDateFromKey(selectedDate);
     if (historyCalendarStatus) {
-      historyCalendarStatus.textContent = selected
+      historyCalendarStatus.textContent = !historyDateSelectionActive
+        ? 'Select a date to view tournaments.'
+        : selected
         ? `${selectedCount} tournament${selectedCount === 1 ? '' : 's'} on ${selected.toLocaleDateString()}`
         : '';
     }
@@ -8136,6 +9152,10 @@ const STORAGE_KEYS = {
   function refreshHistoryDropdown() {
     if (!historyTournamentSelect) return;
     const items = getHistoryTournamentItems();
+    if (!historyDateSelectionActive) {
+      showHistoryCalendarOnly();
+      return;
+    }
     const selectedDate = ensureHistoryDateSelection(items);
     const selectedDateValue = historyDateFromKey(selectedDate);
     if (historyScheduleDateLabel) {
@@ -8145,7 +9165,7 @@ const STORAGE_KEYS = {
       historyScheduleTournamentBtn.disabled = !(selectedDate && historyScheduledTournamentName?.value.trim());
     }
     const filtered = items.filter(item => historyTournamentDateKey(item) === selectedDate);
-    const previous = historyTournamentSelect.value || localStorage.getItem(STORAGE_KEYS.historyTournamentId) || '';
+    const previous = localStorage.getItem(STORAGE_KEYS.historyTournamentId) || historyTournamentSelect.value || '';
     historyTournamentSelect.innerHTML = '<option value="">-- Select Tournament --</option>';
 
     filtered.forEach(item => {
@@ -8157,9 +9177,11 @@ const STORAGE_KEYS = {
       historyTournamentSelect.appendChild(option);
     });
 
-    const selected = filtered.some(item => item.id === previous) ? previous : (filtered[0]?.id || '');
+    const selected = filtered.some(item => item.id === previous) ? previous : '';
     historyTournamentSelect.value = selected;
     historyTournamentSelect.disabled = filtered.length === 0;
+    setHistoryElementHidden(historyTournamentPanel, false);
+    setHistoryElementHidden(historySchedulePanel, false);
     if (selected) localStorage.setItem(STORAGE_KEYS.historyTournamentId, selected);
     else localStorage.removeItem(STORAGE_KEYS.historyTournamentId);
     renderHistoryCalendar(items);
@@ -8170,16 +9192,12 @@ const STORAGE_KEYS = {
     const id = historyTournamentSelect?.value || '';
     if (!id) {
       historyOutput.innerHTML = '';
-      const selectedDate = historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate) || '');
-      historyOutput.appendChild(createHistoryHint(
-        selectedDate
-          ? `No tournaments found on ${selectedDate.toLocaleDateString()}. Select another date in the calendar.`
-          : 'No saved tournaments yet.'
-      ));
+      setHistoryElementHidden(historyOutput, true);
       return;
     }
 
     localStorage.setItem(STORAGE_KEYS.historyTournamentId, id);
+    setHistoryElementHidden(historyOutput, false);
     renderTournamentHistory(loadTournamentById(id), getTournamentIndexEntry(id));
   }
 
@@ -8193,6 +9211,7 @@ const STORAGE_KEYS = {
       scheduleFinalsArea.classList.add('hidden');
       scheduleFinalsArea.hidden = true;
     }
+    refreshFinalsScheduleShareButton();
     pointsTableOutput.innerHTML = '';
     finalLeaderboardOutput.innerHTML = '';
   }
@@ -8362,22 +9381,27 @@ const STORAGE_KEYS = {
       del.setAttribute('aria-label', `Remove ${player}`);
       del.title = `Remove ${player}`;
       del.addEventListener('click', () => {
+        const scheduleExists = hasGeneratedSchedule();
+        const keepTournamentAssignment = !!tournament && scheduleExists && isPlayerAssignedInTournament(player);
         const list = [...getActivePlayersList()];
         list.splice(idx, 1);
-        const photos = getActivePlayerPhotos();
-        const photoToDelete = photos[playerPhotoKey(player)] || getPlayerPhoto(player);
-        deleteStoredPlayerPhoto(photoToDelete, player);
-        delete photos[playerPhotoKey(player)];
-        setActivePlayerPhotos(photos);
+        if (!keepTournamentAssignment) {
+          const photos = getActivePlayerPhotos();
+          delete photos[playerPhotoKey(player)];
+          setActivePlayerPhotos(photos);
+        }
         setActivePlayersList(list);
+        if (tournament && !scheduleExists) {
+          removePlayerFromDraftTeamAssignments(player);
+        }
         updateSavePlayerListBtnState();
         renderPlayersList();
         if (tournament) {
-          tournament.teams = [];
-          tournament.teamPlayers = {};
-          teamsPreviewDiv.innerHTML = '';
-          updateGenerateScheduleBtn();
           updateBuildTeamsBtn();
+          updateGenerateScheduleBtn();
+          renderTeamsPreview();
+          renderGroupsAssignment();
+          if (scheduleExists) recalcAndRender();
           saveTournamentAndRefresh();
         }
       });
@@ -8465,6 +9489,94 @@ const STORAGE_KEYS = {
       }
     }
     return true;
+  }
+
+  function hasGeneratedSchedule(record = tournament) {
+    return Array.isArray(record?.matches) && record.matches.length > 0;
+  }
+
+  function requiredPlayersPerTeamForRecord(record = tournament) {
+    if (!record) return 0;
+    if (record.matchType === 'Singles') return 1;
+    if (record.matchType === 'Doubles') return 2;
+    return 1;
+  }
+
+  function collectTeamsFromTournamentSchedule(record = tournament) {
+    const teams = [];
+    const seen = new Set();
+    const addTeam = (team) => {
+      const name = String(team || '').trim();
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      teams.push(name);
+    };
+    (record?.matches || []).forEach(match => {
+      addTeam(match?.team1);
+      addTeam(match?.team2);
+    });
+    addTeam(record?.finalMatch?.team1);
+    addTeam(record?.finalMatch?.team2);
+    if (record?.knockout && typeof record.knockout === 'object') {
+      Object.values(record.knockout).forEach(match => {
+        addTeam(match?.team1);
+        addTeam(match?.team2);
+      });
+    }
+    return teams;
+  }
+
+  function ensureTournamentTeamsFromSchedule(record = tournament) {
+    if (!record || !hasGeneratedSchedule(record)) return false;
+    let changed = false;
+    let teams = Array.isArray(record.teams)
+      ? record.teams.map(team => String(team || '').trim()).filter(Boolean)
+      : [];
+    if (teams.length === 0) {
+      teams = collectTeamsFromTournamentSchedule(record);
+      if (teams.length > 0) {
+        record.teams = teams;
+        changed = true;
+      }
+    }
+    if (!teams.length) return changed;
+    if (!record.teamPlayers || typeof record.teamPlayers !== 'object') {
+      record.teamPlayers = {};
+      changed = true;
+    }
+    const req = requiredPlayersPerTeamForRecord(record);
+    teams.forEach(team => {
+      if (!Array.isArray(record.teamPlayers[team])) {
+        record.teamPlayers[team] = new Array(req).fill('');
+        changed = true;
+      }
+    });
+    return changed;
+  }
+
+  function isPlayerAssignedInTournament(playerName, record = tournament) {
+    const key = lower(normalizePlayerName(playerName));
+    if (!key || !record?.teamPlayers || typeof record.teamPlayers !== 'object') return false;
+    return Object.values(record.teamPlayers).some(players =>
+      (Array.isArray(players) ? players : []).some(player => lower(normalizePlayerName(player)) === key)
+    );
+  }
+
+  function removePlayerFromDraftTeamAssignments(playerName) {
+    if (!tournament?.teamPlayers || typeof tournament.teamPlayers !== 'object') return false;
+    const key = lower(normalizePlayerName(playerName));
+    if (!key) return false;
+    let changed = false;
+    Object.keys(tournament.teamPlayers).forEach(team => {
+      const players = Array.isArray(tournament.teamPlayers[team]) ? tournament.teamPlayers[team] : [];
+      const nextPlayers = players.map(player => {
+        if (lower(normalizePlayerName(player)) !== key) return player;
+        changed = true;
+        return '';
+      });
+      tournament.teamPlayers[team] = nextPlayers;
+    });
+    return changed;
   }
 
   function requiredPlayersPerTeam() {
@@ -8570,9 +9682,11 @@ const STORAGE_KEYS = {
       optEmpty.textContent = "-- Select --";
       sel.appendChild(optEmpty);
 
+      const availableNames = new Set();
       getPlayersForTeamAssignment().forEach(p => {
         const name = normalizePlayerName(p);
         if (!name) return;
+        availableNames.add(lower(name));
         const pickedByOther = taken.has(lower(name)) && lower(name) !== lower(current);
         if (pickedByOther) return;
 
@@ -8581,6 +9695,13 @@ const STORAGE_KEYS = {
         opt.textContent = name;
         sel.appendChild(opt);
       });
+
+      if (current && !availableNames.has(lower(current))) {
+        const optCurrent = document.createElement("option");
+        optCurrent.value = current;
+        optCurrent.textContent = current;
+        sel.appendChild(optCurrent);
+      }
 
       sel.value = current;
       sel.addEventListener("change", () => {
@@ -9327,6 +10448,7 @@ const STORAGE_KEYS = {
       teamScoreInput.dataset.matchId = String(match.id);
       teamScoreInput.dataset.scoreSide = teamIsFirst ? '1' : '2';
       teamScoreInput.inputMode = 'numeric';
+      teamScoreInput.enterKeyHint = 'next';
       teamScoreInput.setAttribute('aria-label', `${getTeamDisplayName(team)} score for ${match.id}`);
       const teamScore = teamIsFirst ? match.score1 : match.score2;
       teamScoreInput.value = teamScore === null || teamScore === undefined ? '' : teamScore;
@@ -9340,6 +10462,7 @@ const STORAGE_KEYS = {
       opponentScoreInput.dataset.matchId = String(match.id);
       opponentScoreInput.dataset.scoreSide = teamIsFirst ? '2' : '1';
       opponentScoreInput.inputMode = 'numeric';
+      opponentScoreInput.enterKeyHint = 'next';
       opponentScoreInput.setAttribute('aria-label', `Opponent score for ${match.id}`);
       const opponentScore = teamIsFirst ? match.score2 : match.score1;
       opponentScoreInput.value = opponentScore === null || opponentScore === undefined ? '' : opponentScore;
@@ -9347,9 +10470,6 @@ const STORAGE_KEYS = {
 
       teamScoreInput.addEventListener('input', () => {
         autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput);
-        if ((teamScoreInput.value || '').replace(/\D/g, '').length >= 2) {
-          opponentScoreInput.focus();
-        }
       });
       opponentScoreInput.addEventListener('input', () => {
         autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput);
@@ -9538,6 +10658,7 @@ const STORAGE_KEYS = {
         i1.dataset.matchId = String(m.id);
         i1.dataset.scoreSide = '1';
         i1.inputMode = 'numeric';
+        i1.enterKeyHint = 'next';
         i1.setAttribute('aria-label', `${getTeamDisplayName(m.team1)} score for match ${m.id}`);
         i1.style.width = '70px';
         i1.value = m.score1 === null || m.score1 === undefined ? '' : m.score1;
@@ -9556,22 +10677,18 @@ const STORAGE_KEYS = {
         i2.dataset.matchId = String(m.id);
         i2.dataset.scoreSide = '2';
         i2.inputMode = 'numeric';
+        i2.enterKeyHint = 'next';
         i2.setAttribute('aria-label', `${getTeamDisplayName(m.team2)} score for match ${m.id}`);
         i2.style.width = '70px';
         i2.value = m.score2 === null || m.score2 === undefined ? '' : m.score2;
-        const focusSecondScoreWhenReady = () => {
-          if ((i1.value || '').replace(/\D/g, '').length >= 2) i2.focus();
-        };
         if (tournament?.type === "Knockout") {
           i1.addEventListener('input', () => {
             onScoreDraftInput(m.id, 1, i1.value);
-            focusSecondScoreWhenReady();
           });
           i1.addEventListener('change', () => onScoreInput(m.id, 1, i1.value));
         } else {
           i1.addEventListener('input', () => {
             onScoreDraftInput(m.id, 1, i1.value);
-            focusSecondScoreWhenReady();
           });
           i1.addEventListener('change', () => onScoreInput(m.id, 1, i1.value));
         }
@@ -9660,13 +10777,42 @@ const STORAGE_KEYS = {
     }
   }
 
+  let pendingScoreAdvanceSnapshot = null;
+
+  function getScoreInputSnapshot(input) {
+    if (!input?.matches?.('input.scoreInput[data-match-id][data-score-side]')) return null;
+    return {
+      matchId: input.dataset.matchId,
+      scoreSide: input.dataset.scoreSide,
+    };
+  }
+
+  function findScoreInputFromSnapshot(snapshot) {
+    if (!snapshot) return null;
+    return [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
+      .find(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide) || null;
+  }
+
+  function findNextScoreInputAfterSnapshot(snapshot) {
+    if (!snapshot) return null;
+    const inputs = visibleScoreInputs();
+    const index = inputs.findIndex(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide);
+    if (index >= 0 && index < inputs.length - 1) return inputs[index + 1];
+    return inputs.find(input => String(input.value || '').trim() === '') || null;
+  }
+
   function advanceScoreInputIfReady(input) {
     if (!scoreInputIsVisible(input)) return;
     if ((input.value || '').replace(/\D/g, '').length < 2) return;
+    const snapshot = getScoreInputSnapshot(input);
     const inputs = visibleScoreInputs();
     const index = inputs.indexOf(input);
-    if (index < 0 || index >= inputs.length - 1) return;
-    focusScoreInput(inputs[index + 1]);
+    if (index >= 0 && index < inputs.length - 1) {
+      pendingScoreAdvanceSnapshot = null;
+      focusScoreInput(inputs[index + 1]);
+      return;
+    }
+    pendingScoreAdvanceSnapshot = snapshot;
   }
 
   function syncVisibleScoreInputsToTournament() {
@@ -9701,18 +10847,19 @@ const STORAGE_KEYS = {
 
   function getActiveScoreInputSnapshot() {
     const active = document.activeElement;
-    if (!active?.matches?.('input.scoreInput[data-match-id][data-score-side]')) return null;
-    return {
-      matchId: active.dataset.matchId,
-      scoreSide: active.dataset.scoreSide,
-    };
+    return getScoreInputSnapshot(active);
   }
 
   function restoreScoreInputFocus(snapshot) {
-    if (!snapshot) return;
-    const target = [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
-      .find(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide);
+    const target = findScoreInputFromSnapshot(snapshot);
     focusScoreInput(target);
+  }
+
+  function restorePendingScoreAdvance(snapshot) {
+    const target = findNextScoreInputAfterSnapshot(snapshot);
+    if (!target) return false;
+    focusScoreInput(target);
+    return true;
   }
 
   function scheduleScoreRender() {
@@ -9721,8 +10868,12 @@ const STORAGE_KEYS = {
       scoreRenderTimer = null;
       if (!tournament) return;
       const focusSnapshot = getActiveScoreInputSnapshot();
+      const advanceSnapshot = pendingScoreAdvanceSnapshot;
+      pendingScoreAdvanceSnapshot = null;
       recalcAndRender();
-      restoreScoreInputFocus(focusSnapshot);
+      if (!restorePendingScoreAdvance(advanceSnapshot)) {
+        restoreScoreInputFocus(focusSnapshot);
+      }
     }, 240);
   }
 
@@ -9743,7 +10894,7 @@ const STORAGE_KEYS = {
     const match = applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
     patchTournamentScore(match, input.dataset.scoreSide);
     advanceScoreInputIfReady(input);
-  }, true);
+  });
 
   document.addEventListener('change', (event) => {
     const input = event.target?.closest?.('input.scoreInput[data-match-id][data-score-side]');
@@ -9751,7 +10902,7 @@ const STORAGE_KEYS = {
     applyScoreToTournamentMatch(input.dataset.matchId, input.dataset.scoreSide, input.value);
     scheduleScoreRender();
     saveTournament();
-  }, true);
+  });
 
   function getPlayoffFormatLabel(format) {
     if (format === 'Final') return 'Top 2 Final';
@@ -9765,6 +10916,8 @@ const STORAGE_KEYS = {
     scheduleFinalsArea.hidden = !visible;
     if (scheduleFinalsStatus) scheduleFinalsStatus.textContent = message;
     if (scheduleFinalsFormat) scheduleFinalsFormat.textContent = format || 'Playoffs';
+    if (!visible) setAuthStatus(finalsScheduleShareStatus, '');
+    refreshFinalsScheduleShareButton();
   }
 
   function getRegularScheduleCompletion() {
@@ -9775,6 +10928,7 @@ const STORAGE_KEYS = {
 
   function recalcAndRender() {
     if (!tournament) return;
+    ensureTournamentTeamsFromSchedule(tournament);
 
     if (tournament.type === "Knockout") {
       progressKnockoutBracket();
@@ -9787,6 +10941,7 @@ const STORAGE_KEYS = {
         'Knockout Final'
       );
       renderFinalMatch(finalMatch);
+      refreshFinalsScheduleShareButton();
       saveTournament();
       renderGlobalLeaderboard(computeGlobalLeaderboardRows());
       return;
@@ -9899,10 +11054,11 @@ const STORAGE_KEYS = {
 
     renderKnockoutBracket(knockout, playoffFormat);
 
-  renderFinalMatch(tournament.finalMatch);
+    renderFinalMatch(tournament.finalMatch);
+    refreshFinalsScheduleShareButton();
 
-  // Persist recalculated structures so Home tabs and reloads stay in sync
-  saveTournament();
+    // Persist recalculated structures so Home tabs and reloads stay in sync
+    saveTournament();
   }
 
 function createFinalsScheduleTable(matches, handleScore) {
@@ -9942,6 +11098,7 @@ function createFinalsScheduleTable(matches, handleScore) {
       input.dataset.matchId = String(match.id);
       input.dataset.scoreSide = scoreKey === 'score1' ? '1' : '2';
       input.inputMode = 'numeric';
+      input.enterKeyHint = 'next';
       input.setAttribute('aria-label', `${getTeamDisplayName(scoreKey === 'score1' ? match.team1 : match.team2)} score for ${match.stage || 'final'} match ${match.id}`);
       input.style.width = '70px';
       input.min = 0;
@@ -9961,12 +11118,7 @@ function createFinalsScheduleTable(matches, handleScore) {
     const separator = document.createElement('td');
     separator.textContent = 'vs';
     row.appendChild(separator);
-    const score2Input = addScoreCell('score2');
-    score1Input.addEventListener('input', () => {
-      if ((score1Input.value || '').replace(/\D/g, '').length >= 2) {
-        score2Input.focus();
-      }
-    });
+    addScoreCell('score2');
 
     const team2 = document.createElement('td');
     appendTeamPhotoDisplay(team2, match.team2);
@@ -10249,13 +11401,17 @@ function renderFinalSummary(finalMatch) {
       ...t,
     };
     tournament.playerPhotos = normalizePlayerPhotoMap(tournament.playerPhotos || {});
+    const repairedTeams = ensureTournamentTeamsFromSchedule(tournament);
     expandedPointsTeam = null;
     tournamentEntryMode = 'load';
     localStorage.setItem(STORAGE_KEYS.activeTournamentId, id);
+    if (repairedTeams) saveTournament();
   }
 
   function bindTournamentToUI() {
     if (!tournament) return;
+    const repairedTeams = ensureTournamentTeamsFromSchedule(tournament);
+    if (repairedTeams) saveTournamentAndRefresh();
     currentTournamentNameEl.textContent = tournament.name;
 
     tournamentTypeSelect.value = tournament.type || '';
@@ -10539,6 +11695,7 @@ function renderFinalSummary(finalMatch) {
   leaderboardYearSelect?.addEventListener('change', updateMonthlyLeaderboardSelection);
   leaderboardMonthSelect?.addEventListener('change', updateMonthlyLeaderboardSelection);
   shareLeaderboardBtn?.addEventListener('click', shareLeaderboardImage);
+  shareFinalsScheduleBtn?.addEventListener('click', shareFinalsScheduleImage);
 
   if (historyTournamentSelect) {
     historyTournamentSelect.addEventListener('change', () => {
@@ -10554,12 +11711,20 @@ function renderFinalSummary(finalMatch) {
   historyPreviousMonthBtn?.addEventListener('click', () => {
     const cursor = historyCalendarCursor || historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate)) || new Date();
     historyCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+    historyDateSelectionActive = false;
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
     renderHistoryCalendar();
   });
 
   historyNextMonthBtn?.addEventListener('click', () => {
     const cursor = historyCalendarCursor || historyDateFromKey(localStorage.getItem(STORAGE_KEYS.historyDate)) || new Date();
     historyCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    historyDateSelectionActive = false;
+    setHistoryElementHidden(historyTournamentPanel, true);
+    setHistoryElementHidden(historySchedulePanel, true);
+    setHistoryElementHidden(historyOutput, true);
     renderHistoryCalendar();
   });
 
@@ -10590,8 +11755,9 @@ function renderFinalSummary(finalMatch) {
   loadPlayerListBtn.addEventListener('click', () => {
     const pl = loadPlayerList(playerListSelect.value);
     if (!pl) return;
-    setActivePlayersList(pl.players || []);
-    setActivePlayerPhotos(pl.playerPhotos || pl.photos || {});
+    const players = pl.players || [];
+    setActivePlayersList(players);
+    setActivePlayerPhotos(getPlayerPhotoMapForPlayers(players, pl.playerPhotos || pl.photos || {}));
     renderPlayersList();
     updateSavePlayerListBtnState();
     if (tournament) {
@@ -10612,8 +11778,11 @@ function renderFinalSummary(finalMatch) {
       alert('Please ensure all players are filled and unique before saving.');
       return;
     }
-    upsertPlayerList(name, players);
+    const listId = upsertPlayerList(name, players);
     refreshHomeDropdowns();
+    playerListSelect.value = listId;
+    loadPlayerListBtn.disabled = false;
+    if (deletePlayerListBtn) deletePlayerListBtn.disabled = false;
     alert('Player list saved.');
   });
 
@@ -10898,7 +12067,7 @@ function renderFinalSummary(finalMatch) {
           saveTournament();
           return;
         }
-        recalcAndRender();
+        scheduleScoreRender();
       }));
     }
   }
