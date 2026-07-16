@@ -10352,33 +10352,6 @@ const STORAGE_KEYS = {
     return [...regularFixtures, ...qualifierFixtures];
   }
 
-  function syncScheduleScoreInput(matchId, scoreSide, value) {
-    [scheduleOutput, playoffBracketOutput, finalMatchOutput].forEach(container => {
-      container?.querySelectorAll('input.scoreInput').forEach(input => {
-        if (input.dataset.matchId === String(matchId) && input.dataset.scoreSide === String(scoreSide)) {
-          input.value = value;
-        }
-      });
-    });
-  }
-
-  function autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput) {
-    if (!match || !team) return;
-    const teamIsFirst = match.team1 === team;
-    const teamSide = teamIsFirst ? 1 : 2;
-    const opponentSide = teamIsFirst ? 2 : 1;
-    const parseScore = value => {
-      if (value === '') return null;
-      const parsed = parseInt(value, 10);
-      return Number.isFinite(parsed) ? parsed : null;
-    };
-    match[`score${teamSide}`] = parseScore(teamScoreInput.value);
-    match[`score${opponentSide}`] = parseScore(opponentScoreInput.value);
-    syncScheduleScoreInput(match.id, teamSide, teamScoreInput.value);
-    syncScheduleScoreInput(match.id, opponentSide, opponentScoreInput.value);
-    saveTournament();
-  }
-
   function createPointsFixtureDetailRow(team, columnCount) {
     const detailRow = document.createElement('tr');
     detailRow.className = 'pointsFixtureDetail';
@@ -10469,13 +10442,13 @@ const STORAGE_KEYS = {
       opponentScoreCell.appendChild(opponentScoreInput);
 
       teamScoreInput.addEventListener('input', () => {
-        autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput);
+        onScoreDraftInput(match.id, teamIsFirst ? 1 : 2, teamScoreInput.value);
       });
       opponentScoreInput.addEventListener('input', () => {
-        autoSaveScoreFromPointsFixture(match, team, teamScoreInput, opponentScoreInput);
+        onScoreDraftInput(match.id, teamIsFirst ? 2 : 1, opponentScoreInput.value);
       });
-      teamScoreInput.addEventListener('change', scheduleScoreRender);
-      opponentScoreInput.addEventListener('change', scheduleScoreRender);
+      teamScoreInput.addEventListener('change', () => onScoreInput(match.id, teamIsFirst ? 1 : 2, teamScoreInput.value));
+      opponentScoreInput.addEventListener('change', () => onScoreInput(match.id, teamIsFirst ? 2 : 1, opponentScoreInput.value));
 
       row.append(matchCell, teamCell, teamScoreCell, opponentScoreCell, opponentCell);
       tbody.appendChild(row);
@@ -10789,8 +10762,9 @@ const STORAGE_KEYS = {
 
   function findScoreInputFromSnapshot(snapshot) {
     if (!snapshot) return null;
-    return [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
-      .find(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide) || null;
+    const matches = [...document.querySelectorAll('input.scoreInput[data-match-id][data-score-side]')]
+      .filter(input => input.dataset.matchId === snapshot.matchId && input.dataset.scoreSide === snapshot.scoreSide);
+    return matches.find(scoreInputIsVisible) || matches[0] || null;
   }
 
   function findNextScoreInputAfterSnapshot(snapshot) {
